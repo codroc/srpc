@@ -19,6 +19,9 @@ public:
     explicit FDescriptor(const int fd);
     ~FDescriptor() = default;
 
+    // 如果显式定义了 move 函数，而没有显式定义 copy 函数，编译器是不会自动给你添加 copy 函数的，默认是 deleted
+    // 如果只定义了 copy 函数，而使用了这样的方法 FDescriptor fd(std::move(fd1)); 默认是调用 copy constructor 而不是
+    // move constructor
     FDescriptor(const FDescriptor& other) = default;
     FDescriptor& operator=(const FDescriptor& other) = default;
     FDescriptor(FDescriptor&& other) = default;
