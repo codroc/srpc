@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.12)
+project(net)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_executable(gtest_test_env test/gtest_main.cpp test/gtest_test_env.cpp)
+target_link_libraries(gtest_test_env gtest pthread)
+
+add_executable(address_test src/address.cpp test/gtest_main.cpp test/address_test.cpp)
+target_link_libraries(address_test gtest pthread cpputils)
+target_include_directories(address_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
