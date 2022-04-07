@@ -44,6 +44,8 @@ public:
 
     // brief: use counts of fd returned by kernel
     size_t use_count() const { return _internal_fd.use_count(); }
+
+    int fd() const { return _internal_fd->fd; }
 private:
     // brief: handler of fd returned by kernel.
     struct FDWrapper {
