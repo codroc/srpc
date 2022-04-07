@@ -1,7 +1,14 @@
 #include "flog.h"
 
 #include "address.h"
+#include "config.h"
+#include <string.h>
+#include <string>
 
+
+// static ConfigVar<std::string>::ptr unix_domain_pathname = Config::lookup(
+//         "srpc.net.address.Address.unix_domain_pathname",
+//         static_cast<std::string>("/tmp/unix.socket", "unix domain socket pathname"));
 
 Address::Address(const std::string& host, const std::string& service, 
             const addrinfo& hits)
@@ -27,6 +34,19 @@ Address::Address(const std::string& ip, const uint16_t port)
 Address::Address(const sockaddr* addr, const socklen_t size) {
     ::memcpy(_storage, addr, size);
     _size = size;
+}
+
+Address::Address(const std::string& pathname)
+    : Address(pathname.c_str())
+{}
+
+Address::Address(const char* pathname) {
+    ::unlink(pathname);
+    struct sockaddr_un un{};
+    socklen_t len = sizeof un;
+    un.sun_family = AF_UNIX;
+    ::memmove(un.sun_path, pathname, ::strlen(pathname));
+    *this = Address((sockaddr*)&un, len);
 }
 
 std::pair<std::string, uint16_t> Address::ip_port() const {

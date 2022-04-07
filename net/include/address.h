@@ -3,12 +3,14 @@
 
 #include <memory>
 
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/un.h>
 
 class Address {
 public:
@@ -16,7 +18,7 @@ public:
     struct Raw {
         sockaddr_storage storage{};
         operator sockaddr* () { return reinterpret_cast<sockaddr*> (&storage); }
-        operator const sockaddr* () { return reinterpret_cast<const sockaddr*> (&storage); }
+        operator const sockaddr* () const { return reinterpret_cast<const sockaddr*> (&storage); }
     };
     // brief: This constr provide dns service by getaddrinfo
     // param host: host name such as "google.com"
@@ -30,6 +32,12 @@ public:
 
     // brief: Construct from [sockaddr*]
     Address(const sockaddr* addr, const socklen_t size);
+
+    // brief: Construct an address used by unix domain socket
+    // param pathname: a filesystem pathname. The max length is 108 bytes.
+    // [Unix domain socket](ref: man7::unix)
+    Address(const std::string& pathname);
+    Address(const char* pathname);
 
     // brief: Get Address's ip and port
     // return: first  - dotted-quad string such as "127.0.0.1"
@@ -47,6 +55,8 @@ public:
 
     socklen_t size() const { return _size; }
 
+    operator sockaddr* () { return _storage; }
+    operator const sockaddr* () const { return _storage; }
 private:
     Address(const std::string& host, const std::string& service, 
             const struct addrinfo& hits);
