@@ -14,3 +14,7 @@ target_include_directories(address_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_executable(file_descriptor_test src/file_descriptor.cpp test/gtest_main.cpp test/file_descriptor_test.cpp)
 target_link_libraries(file_descriptor_test gtest pthread cpputils)
 target_include_directories(file_descriptor_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(socket_test src/socket.cpp src/file_descriptor.cpp src/address.cpp test/gtest_main.cpp test/socket_test.cpp)
+target_link_libraries(socket_test gtest pthread cpputils yaml-cpp)
+target_include_directories(socket_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
