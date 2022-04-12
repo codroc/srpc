@@ -7,10 +7,46 @@
 #include <memory>
 #include <string>
 
+// brief: socket options
+// The socket options listed below can be set by using setsockopt(2) and read with getsockopt(2) 
+// with the socket level  set  to  SOL_SOCKET  for  all sockets.
+struct SocketOptions {
+    SocketOptions();
+
+    // fcntl
+    bool blocking{};
+
+    // setsockopt and getsockopt
+    // option level: SOL_SOCKET
+    bool reuseaddr{};
+    bool reuseport{};
+
+    // brief: Enable sending of keep-alive messages on connection-oriented sockets. (ref: man7::socket)
+    bool keepalive{};
+    
+    // option level: IPPROTO_TCP
+    
+    // brief: The maximum number of keepalive probes TCP should send before dropping the connection.
+    // This option should not be used in code intended to be portable.
+    int tcp_keepcnt{};
+
+    // brief: The time (in seconds) the connection needs to remain idle before TCP starts sending keepalive probes, if the socket option SO_KEEPALIVE has been set on this socket.
+    // This  option should not be used in code intended to be portable.
+    int tcp_keepidle{};
+
+    // brief: The time (in seconds) between individual keepalive probes.  This option should not be used in code intended to be portable.
+    int tcp_keepinterval{};
+
+    // brief: If set, disable the Nagle algorithm. (ref: man7::tcp)
+    bool tcp_nodelay{};
+};
+
 class Socket : public FDescriptor {
 public:
+    SocketOptions opts;
     // int socket(int domain, int type, int protocol); [socket(2)](ref man::socket)
     Socket(int domain, int type);
+    Socket(int domain, int type, const SocketOptions& o);
     Socket(int fd);
     virtual ~Socket();
 
@@ -57,6 +93,7 @@ public:
 class UDPSocket : public Socket {
 public:
     UDPSocket();
+    UDPSocket(const SocketOptions& opts);
 
     // brief: receive msg from socket
     // param limited: maximum bytes we can accept
@@ -69,6 +106,7 @@ private:
     TCPSocket(int fd);
 public:
     TCPSocket();
+    TCPSocket(const SocketOptions& opts);
 
     // brief: listen on port [listen(2)](ref: man::listen)
     void listen();
@@ -88,6 +126,7 @@ public:
     // client: socket, connect, read\write, close
     // [Unix domain socket; local stream IPC](ref: man7::unix)
     UnixSocket();
+    UnixSocket(const SocketOptions& opts);
     void bind(const std::string& pathname);
     void listen();
     UnixSocket accept();

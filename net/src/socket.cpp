@@ -6,16 +6,81 @@
 #include <string.h>
 #include <errno.h>
 
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+// -----------------------------------------------------------------------------------------SocketOptions
+static ConfigVar<std::string>::ptr socket_options_config_file = Config::lookup("srpc.net.socket.SocketOptions.config_file", 
+
+        static_cast<std::string>("options.yaml"), "config file of socket options");
+static ConfigVar<bool>::ptr socket_options_blocking = Config::lookup("srpc.net.socket.SocketOptions.blocking", 
+        static_cast<bool>(true), "blocking socket");
+static ConfigVar<bool>::ptr socket_options_reuseaddr = Config::lookup("srpc.net.socket.SocketOptions.reuseaddr", 
+        static_cast<bool>(false), "not reuse addr");
+static ConfigVar<bool>::ptr socket_options_reuseport = Config::lookup("srpc.net.socket.SocketOptions.reuseport", 
+        static_cast<bool>(false), "not reuse port");
+
+static ConfigVar<bool>::ptr socket_options_keepalive = Config::lookup("srpc.net.socket.SocketOptions.keepalive", 
+        static_cast<bool>(false), "not keepalive");
+static ConfigVar<int>::ptr socket_options_tcp_keepcnt = Config::lookup("srpc.net.socket.SocketOptions.tcp_keepcnt", 
+        static_cast<int>(5), "default retx times");
+static ConfigVar<int>::ptr socket_options_tcp_keepidle = Config::lookup("srpc.net.socket.SocketOptions.tcp_keepidle", 
+        static_cast<int>(5), "default idle time");
+static ConfigVar<int>::ptr socket_options_tcp_keepinterval = Config::lookup("srpc.net.socket.SocketOptions.tcp_keepinterval", 
+        static_cast<int>(5), "default interval time");
+
+static ConfigVar<bool>::ptr socket_options_tcp_nodelay = Config::lookup("srpc.net.socket.SocketOptions.tcp_nodelay", 
+        static_cast<bool>(false), "false means: send package as big as possible");
+
+static int CalledOnce() {
+    LOG_INFO << "please create options.yaml and do some config!\n";
+    return 0;
+}
+
+static void LoadFromCfg() {
+    std::string config_file = socket_options_config_file->getValue();
+    fs::path path{config_file};
+    fs::directory_entry entry{path};
+    if (!entry.exists()) {
+        static int a = CalledOnce();
+    } else {
+        Config::loadFromYaml(config_file);
+    }
+}
+
+SocketOptions::SocketOptions() {
+    LoadFromCfg();
+    blocking = socket_options_blocking->getValue();
+
+    reuseaddr = socket_options_reuseaddr->getValue();
+    reuseport = socket_options_reuseport->getValue();
+
+    keepalive = socket_options_keepalive->getValue();
+    tcp_keepcnt = socket_options_tcp_keepcnt->getValue();
+    tcp_keepidle = socket_options_tcp_keepidle->getValue();
+    tcp_keepinterval = socket_options_tcp_keepinterval->getValue();
+
+    tcp_nodelay = socket_options_tcp_nodelay->getValue();
+}
+
 
 // -----------------------------------------------------------------------------------------Socket
 static ConfigVar<size_t>::ptr recv_size_limited = Config::lookup("srpc.net.socket.Socket.size_limited", 
         static_cast<size_t>(65536), "default maximum receive size is 64KB");
 Socket::Socket(int domain, int type) 
     : FDescriptor(::socket(domain, type, 0))
+    , opts()
 {}
 
 Socket::Socket(int fd)
     : FDescriptor(fd)
+    , opts()
+{}
+
+Socket::Socket(int domain, int type, const SocketOptions& o)
+    : FDescriptor(::socket(domain, type, 0))
+    , opts(o)
 {}
 
 Socket::~Socket() {
@@ -132,6 +197,10 @@ UDPSocket::UDPSocket()
     : Socket(AF_INET, SOCK_DGRAM)
 {}
 
+UDPSocket::UDPSocket(const SocketOptions& opts)
+    : Socket(AF_INET, SOCK_DGRAM, opts)
+{}
+
 std::pair<std::string, Address> UDPSocket::recvfrom(size_t limited) {
 
     size_t recv_size = std::min(recv_size_limited->getValue(), limited);
@@ -152,6 +221,10 @@ TCPSocket::TCPSocket(int fd)
     : Socket(fd)
 {}
 
+TCPSocket::TCPSocket(const SocketOptions& opts)
+    : Socket(AF_INET, SOCK_STREAM, opts)
+{}
+
 void TCPSocket::listen() {
     syscall("TCPSocket::listen", ::listen(fd(), 10));
 }
@@ -168,6 +241,10 @@ UnixSocket::UnixSocket()
 
 UnixSocket::UnixSocket(int fd)
     : Socket(fd)
+{}
+ 
+UnixSocket::UnixSocket(const SocketOptions& opts)
+    : Socket(AF_UNIX, SOCK_SEQPACKET, opts)
 {}
 
 void UnixSocket::bind(const std::string& pathname) {
