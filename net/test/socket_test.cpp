@@ -1,6 +1,11 @@
 #include <gtest/gtest.h>
 #include "address.h"
 #include "socket.h"
+
+#include <fcntl.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 namespace {
 
 TEST(Socket, UDPSocket) {
@@ -122,6 +127,47 @@ TEST(Socket, UnixSocket) {
         sock.bind("/tmp/cwp.socket");
         sock.listen();
     }
+}
+
+TEST(TCPSocket, SocketOptions) {
+    SocketOptions opts;
+    opts.blocking = false;
+    opts.reuseaddr = true;
+    opts.reuseport = true;
+    opts.keepalive = true;
+    opts.tcp_keepcnt = 1;
+    opts.tcp_keepidle = 2;
+    opts.tcp_keepinterval = 3;
+    opts.tcp_nodelay = true;
+
+    TCPSocket sock(opts);
+    int args = ::fcntl(sock.fd(), F_GETFL);
+    EXPECT_TRUE(args & O_NONBLOCK);
+
+    int val = 0;
+    socklen_t len = sizeof val;
+    ::getsockopt(sock.fd(), SOL_SOCKET, SO_REUSEADDR, &val, &len);
+    EXPECT_TRUE(val);
+
+    val = 0;
+    ::getsockopt(sock.fd(), SOL_SOCKET, SO_REUSEPORT, &val, &len);
+    EXPECT_TRUE(val);
+
+    val = 0;
+    ::getsockopt(sock.fd(), SOL_SOCKET, SO_KEEPALIVE, &val, &len);
+    EXPECT_TRUE(val);
+
+    val = 0;
+    ::getsockopt(sock.fd(), IPPROTO_TCP, TCP_KEEPCNT, &val, &len);
+    EXPECT_EQ(val, 1);
+
+    val = 0;
+    ::getsockopt(sock.fd(), IPPROTO_TCP, TCP_KEEPIDLE, &val, &len);
+    EXPECT_EQ(val, 2);
+
+    val = 0;
+    ::getsockopt(sock.fd(), IPPROTO_TCP, TCP_KEEPINTVL, &val, &len);
+    EXPECT_EQ(val, 3);
 }
 
 } // namespace 

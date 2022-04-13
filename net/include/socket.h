@@ -39,15 +39,21 @@ struct SocketOptions {
 
     // brief: If set, disable the Nagle algorithm. (ref: man7::tcp)
     bool tcp_nodelay{};
+
+    // brief: set socket options
+    void set_options(int fd);
 };
 
 class Socket : public FDescriptor {
 public:
     SocketOptions opts;
+    SocketOptions& get_socket_options() { return opts; }
+    const SocketOptions& get_socket_options() const { return opts; }
+
     // int socket(int domain, int type, int protocol); [socket(2)](ref man::socket)
-    Socket(int domain, int type);
-    Socket(int domain, int type, const SocketOptions& o);
-    Socket(int fd);
+    // Socket(int domain, int type);
+    Socket(int domain, int type, const SocketOptions& o = SocketOptions());
+    Socket(int fd, const SocketOptions& o);
     virtual ~Socket();
 
     // brief: bind to an address, can used by UDPSocket and TCPSocket.
@@ -92,8 +98,7 @@ public:
 // see detial on https://blog.csdn.net/luojian5900339/article/details/78472137
 class UDPSocket : public Socket {
 public:
-    UDPSocket();
-    UDPSocket(const SocketOptions& opts);
+    UDPSocket(const SocketOptions& opts = SocketOptions());
 
     // brief: receive msg from socket
     // param limited: maximum bytes we can accept
@@ -103,10 +108,11 @@ public:
 class TCPSocket : public Socket {
 private:
     // brief: used by accept
-    TCPSocket(int fd);
+    // TCPSocket(int fd);
+    TCPSocket(int fd, const SocketOptions& opts);
 public:
-    TCPSocket();
-    TCPSocket(const SocketOptions& opts);
+    // TCPSocket();
+    TCPSocket(const SocketOptions& opts = SocketOptions());
 
     // brief: listen on port [listen(2)](ref: man::listen)
     void listen();
@@ -117,7 +123,7 @@ public:
 class UnixSocket : public Socket {
 private:
     // brief: used by accept
-    UnixSocket(int fd);
+    UnixSocket(int fd, const SocketOptions& opts);
 public:
     // brief: use SOCK_UNIX domain
     // and SOCK_SEQPACKET socket type. This is a connection-orianted and message bounded 
@@ -125,8 +131,7 @@ public:
     // server: socket, bind, listen, accept, read\write, close
     // client: socket, connect, read\write, close
     // [Unix domain socket; local stream IPC](ref: man7::unix)
-    UnixSocket();
-    UnixSocket(const SocketOptions& opts);
+    UnixSocket(const SocketOptions& opts = SocketOptions());
     void bind(const std::string& pathname);
     void listen();
     UnixSocket accept();

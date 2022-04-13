@@ -5,10 +5,31 @@
 #include <socket.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 
 #include <filesystem>
 
 namespace fs = std::filesystem;
+
+void syscall(const std::string& description, int ret) {
+    if (-1 == ret) {
+        LOG_ERROR << description 
+            << "\t"
+            << ::strerror(errno) << "\n";
+    }
+}
+
+// brief: the syscall which has meaningful ret value
+int syscall_ret(const std::string& description, int ret) {
+    if (-1 == ret) {
+        LOG_ERROR << description 
+            << "\t"
+            << ::strerror(errno) << "\n";
+    }
+    return ret;
+}
 
 // -----------------------------------------------------------------------------------------SocketOptions
 static ConfigVar<std::string>::ptr socket_options_config_file = Config::lookup("srpc.net.socket.SocketOptions.config_file", 
@@ -64,42 +85,66 @@ SocketOptions::SocketOptions() {
     tcp_nodelay = socket_options_tcp_nodelay->getValue();
 }
 
+void SocketOptions::set_options(int fd) {
+    // default is blocking
+    // LOG_INFO << "fd = " << fd << "\n";
+    if (!blocking) {
+        int args = syscall_ret("fcntl", ::fcntl(fd, F_GETFL));
+        args |= O_NONBLOCK;
+        syscall("fcntl", ::fcntl(fd, F_SETFL, args));
+    }
+
+    if (reuseaddr) {
+        int val = 1;
+        socklen_t optlen = sizeof val;
+        syscall("setsockopt", 
+                ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, optlen));
+    }
+
+    if (reuseport) {
+        int val = 1;
+        socklen_t optlen = sizeof val;
+        syscall("setsockopt", 
+                ::setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &val, optlen));
+    }
+
+    if (keepalive) {
+        int val = 1;
+        socklen_t optlen = sizeof val;
+        syscall("setsockopt", 
+                ::setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &val, optlen));
+        
+        syscall("setsockopt", 
+                ::setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &tcp_keepcnt, sizeof(int)));
+        syscall("setsockopt", 
+                ::setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &tcp_keepidle, sizeof(int)));
+        syscall("setsockopt", 
+                ::setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &tcp_keepinterval, sizeof(int)));
+    }
+
+    if (tcp_nodelay) {
+        int val = 1;
+        socklen_t optlen = sizeof val;
+        syscall("setsockopt", 
+                ::setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, optlen));
+    }
+}
 
 // -----------------------------------------------------------------------------------------Socket
 static ConfigVar<size_t>::ptr recv_size_limited = Config::lookup("srpc.net.socket.Socket.size_limited", 
         static_cast<size_t>(65536), "default maximum receive size is 64KB");
-Socket::Socket(int domain, int type) 
-    : FDescriptor(::socket(domain, type, 0))
-    , opts()
-{}
-
-Socket::Socket(int fd)
+Socket::Socket(int fd, const SocketOptions& o)
     : FDescriptor(fd)
-    , opts()
-{}
+    , opts(o)
+{
+    opts.set_options(fd);
+}
 
 Socket::Socket(int domain, int type, const SocketOptions& o)
-    : FDescriptor(::socket(domain, type, 0))
-    , opts(o)
+    : Socket(::socket(domain, type, 0), o)
 {}
 
 Socket::~Socket() {
-}
-void syscall(const std::string& description, int ret) {
-    if (-1 == ret) {
-        LOG_ERROR << description 
-            << "\t"
-            << ::strerror(errno) << "\n";
-    }
-}
-// brief: the syscall which has meaningful ret value
-int syscall_ret(const std::string& description, int ret) {
-    if (-1 == ret) {
-        LOG_ERROR << description 
-            << "\t"
-            << ::strerror(errno) << "\n";
-    }
-    return ret;
 }
 void Socket::bind(const Address& addr) {
     syscall("Socket::bind", ::bind(fd(), addr, addr.size()));
@@ -193,10 +238,6 @@ Address Socket::get_peer_address() const {
 }
 
 // -----------------------------------------------------------------------------------------UDPSocket
-UDPSocket::UDPSocket() 
-    : Socket(AF_INET, SOCK_DGRAM)
-{}
-
 UDPSocket::UDPSocket(const SocketOptions& opts)
     : Socket(AF_INET, SOCK_DGRAM, opts)
 {}
@@ -213,12 +254,8 @@ std::pair<std::string, Address> UDPSocket::recvfrom(size_t limited) {
 }
 
 // -----------------------------------------------------------------------------------------TCPSocket
-TCPSocket::TCPSocket() 
-    : Socket(AF_INET, SOCK_STREAM)
-{}
-
-TCPSocket::TCPSocket(int fd) 
-    : Socket(fd)
+TCPSocket::TCPSocket(int fd, const SocketOptions& opts)
+    : Socket(fd, opts)
 {}
 
 TCPSocket::TCPSocket(const SocketOptions& opts)
@@ -231,16 +268,12 @@ void TCPSocket::listen() {
 
 TCPSocket TCPSocket::accept() {
     int ret = syscall_ret("TCPSocket::accept", ::accept(fd(), NULL, NULL));
-    return {ret};
+    return {ret, get_socket_options()};
 }
 
 // -----------------------------------------------------------------------------------------UnixSocket
-UnixSocket::UnixSocket()
-    : Socket(AF_UNIX, SOCK_SEQPACKET)
-{}
-
-UnixSocket::UnixSocket(int fd)
-    : Socket(fd)
+UnixSocket::UnixSocket(int fd, const SocketOptions& opts)
+    : Socket(fd, opts)
 {}
  
 UnixSocket::UnixSocket(const SocketOptions& opts)
@@ -258,5 +291,5 @@ void UnixSocket::listen() {
 
 UnixSocket UnixSocket::accept() {
     int ret = syscall_ret("UnixSocket::accept", ::accept(fd(), NULL, NULL));
-    return {ret};
+    return {ret, get_socket_options()};
 }
