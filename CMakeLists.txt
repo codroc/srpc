@@ -5,4 +5,5 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/net")
+add_subdirectory("${PROJECT_SOURCE_DIR}/proto")
 
