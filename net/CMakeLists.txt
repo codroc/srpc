@@ -4,6 +4,12 @@ project(net)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+file(GLOB sources ${PROJECT_SOURCE_DIR}/src/*.cpp)
+
+add_library(net STATIC ${sources})
+target_link_libraries(net cpputils yaml-cpp stdc++fs pthread)
+target_include_directories(net PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
 add_executable(gtest_test_env test/gtest_main.cpp test/gtest_test_env.cpp)
 target_link_libraries(gtest_test_env gtest pthread)
 
