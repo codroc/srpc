@@ -23,6 +23,11 @@ static HttpMethod GetMethodEnum(const std::string& method_name) {
     return HttpMethod::None;
 }
 
+// brief: get description of status code
+static std::string GetDescription(HttpStatus status_code) {
+    return {};
+}
+
 static std::string strip(const std::string& str, char c) {
     std::string::size_type l = 0, r = str.size() - 1;
     while (l < str.size() && str[l] == c) ++l;
@@ -68,13 +73,13 @@ HttpHeader HttpHeader::get_header_from_string(const std::string& str) {
     return header;
 }
 
-std::string_view HttpBody::parse(const std::string& cnt_type) {
-    if (cnt_type.empty()) {
-        LOG_ERROR << "Content-Type is empty!\n";    
-        return {};
-    }
-    return {};
-}
+// std::string_view HttpBody::parse(const std::string& cnt_type) {
+//     if (cnt_type.empty()) {
+//         LOG_ERROR << "Content-Type is empty!\n";    
+//         return {};
+//     }
+//     return {};
+// }
 
 std::string HttpRequest::to_string() {
     std::stringstream ss;
@@ -91,7 +96,7 @@ std::string HttpRequest::to_string() {
     ss << "\r\n";
 
     if (get_body().content_length() > 0) {
-        ss << get_body().parse(std::string(get_header()["Content-Type"])) << "\r\n";
+        ss << get_body().as_string() << "\r\n";
     }
 
     return ss.str();
@@ -140,4 +145,37 @@ HttpRequest HttpRequest::from_string(const std::string& str) {
 
     // deal with body
     return HttpRequest(method, uri, headers, s_body);
+}
+
+HttpBase::HttpBase(HttpStatus status_code, HttpHeader h, HttpBody b)
+    : _status_line(status_code, GetDescription(status_code))
+    , _header(h)
+    , _body(b)
+{}
+
+std::string HttpResponse::to_string() {
+    std::stringstream ss;
+    // status line
+    ss << get_status_line().version << ' ' 
+       << std::to_string(static_cast<int>(get_status_line().status)) << ' ' 
+       << GetMethodName(get_status_line().method) << ' ' 
+       << get_status_line().description << "\r\n";
+       
+
+    // request headers
+    for (auto p : get_header()) {
+        ss << p.first << ": " 
+           << p.second << "\r\n";
+    }
+    ss << "\r\n";
+
+    if (get_body().content_length() > 0) {
+        ss << get_body().as_string() << "\r\n";
+    }
+
+    return ss.str();
+}
+
+HttpResponse HttpResponse::from_string(const std::string& str) {
+    return HttpResponse(HttpStatus::None);
 }

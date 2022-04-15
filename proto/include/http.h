@@ -135,7 +135,7 @@ struct HttpStatusLine {
      * response: Version StatusCode Description
      */
     // brief: for http request
-    explicit HttpStatusLine(HttpMethod m, const std::string& urii)
+    HttpStatusLine(HttpMethod m, const std::string& urii)
         : version("HTTP/1.1")
         , method(m)
         , uri(urii)
@@ -144,7 +144,7 @@ struct HttpStatusLine {
     {}
 
     // brief: for http response
-    explicit HttpStatusLine(HttpStatus s, const std::string& d)
+    HttpStatusLine(HttpStatus s, const std::string& d)
         : version("HTTP/1.1")
         , method(HttpMethod::None)
         , uri()
@@ -180,6 +180,8 @@ public:
         return _headers[key];
     }
 
+    // brief: get total counts of headers
+    size_t counts() const { return _headers.size(); }
 
     // insert a header to _headers
     void insert(const std::string& key, const std::string& value) {
@@ -206,7 +208,7 @@ class HttpBody {
 public:
     HttpBody(const std::string& buf = "")
         : _buf()
-        , _parse_result()
+        // , _parse_result()
     {}
 
     // brief: return byte stream which is not parsed.
@@ -216,28 +218,24 @@ public:
     // param cnt_type: Content-Type
     // return: a string view of _parse_result
     // Content-Type：type/subtype; parameter
-    std::string_view parse(const std::string& cnt_type);
+    // std::string_view parse(const std::string& cnt_type);
 
     size_t content_length() const { return _buf.size(); }
 private:
     std::string _buf;
     // brief: the reuslt of the byte stream parsed by HttpBody::parse
-    std::string _parse_result;
+    // std::string _parse_result;
 };
 
-class HttpRequest {
+class HttpBase {
 public:
-    /* 
-     * Method uri version
-     * request header
-     * 
-     * request body
-     */
-    explicit HttpRequest(HttpMethod m, const std::string& uri, HttpHeader h = HttpHeader(), HttpBody b = HttpBody())
+    HttpBase(HttpMethod m, const std::string& uri, HttpHeader h = HttpHeader(), HttpBody b = HttpBody())
         : _status_line(m, uri)
         , _header(h)
         , _body(b)
     {}
+
+    explicit HttpBase(HttpStatus status_code, HttpHeader h = HttpHeader(), HttpBody b = HttpBody());
 
     HttpStatusLine& get_status_line() { return _status_line; }
     const HttpStatusLine& get_status_line() const { return _status_line; }
@@ -247,6 +245,23 @@ public:
 
     HttpBody& get_body() { return _body; }
     const HttpBody& get_body() const { return _body; }
+protected:
+    HttpStatusLine _status_line;
+    HttpHeader _header;
+    HttpBody _body;
+};
+
+class HttpRequest : public HttpBase {
+public:
+    /* 
+     * Method uri version
+     * request header
+     * 
+     * request body
+     */
+    HttpRequest(HttpMethod m, const std::string& uri, HttpHeader h = HttpHeader(), HttpBody b = HttpBody())
+        : HttpBase(m, uri, h, b)
+    {}
 
     // brief: translate HttpRequst to string
     std::string to_string();
@@ -254,12 +269,25 @@ public:
     // brief: parse string to HttpRequst
     // param str: serialized HttpRequest.
     static HttpRequest from_string(const std::string& str);
-private:
-    HttpStatusLine _status_line;
-    HttpHeader _header;
-    HttpBody _body;
 };
 
-class HttpResponse {};
+class HttpResponse : public HttpBase {
+public:
+    /*
+     * HTTP/1.1 200 OK
+     * response header
+     * response body
+     */
+    explicit HttpResponse(HttpStatus status_code, HttpHeader h = HttpHeader(), HttpBody b = HttpBody())
+        : HttpBase(status_code, h, b)
+    {}
+
+    // brief: translate HttpResponse to string
+    std::string to_string();
+
+    // brief: parse string to HttpResponse
+    // param str: serialized HttpRequest.
+    static HttpResponse from_string(const std::string& str);
+};
 
 #endif
