@@ -11,3 +11,7 @@ target_include_directories(http_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_executable(mwget test/wget.cpp src/http.cpp)
 target_link_libraries(mwget PUBLIC gtest net cpputils pthread)
 target_include_directories(mwget PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(parser_test test/gtest_main.cpp test/parser_test.cpp src/parser.cpp)
+target_link_libraries(parser_test PUBLIC gtest pthread)
+target_include_directories(parser_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
