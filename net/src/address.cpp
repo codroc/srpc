@@ -15,9 +15,9 @@ Address::Address(const std::string& host, const std::string& service,
 {
     struct addrinfo* ai = nullptr;
     auto deleter = [](addrinfo *const x) { ::freeaddrinfo(x); };
-    std::unique_ptr<addrinfo, decltype(deleter)> up(ai, deleter);
     int ret = ::getaddrinfo(host.c_str(), service.c_str(), 
                                 &hits, &ai);
+    std::unique_ptr<addrinfo, decltype(deleter)> up(ai, deleter);
     if (ai == nullptr)
         LOG_ERROR << "getaddrinfo return zero addrinfo\n";
     *this = Address(ai->ai_addr, ai->ai_addrlen);
