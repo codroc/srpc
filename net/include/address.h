@@ -63,7 +63,7 @@ private:
     const struct addrinfo make_hits(int ai_flag, int ai_family);
 private:
     Raw _storage{};
-    socklen_t _size;
+    socklen_t _size{};
 };
 
 #endif

@@ -18,8 +18,11 @@ Address::Address(const std::string& host, const std::string& service,
     int ret = ::getaddrinfo(host.c_str(), service.c_str(), 
                                 &hits, &ai);
     std::unique_ptr<addrinfo, decltype(deleter)> up(ai, deleter);
-    if (ai == nullptr)
-        LOG_ERROR << "getaddrinfo return zero addrinfo\n";
+    if (ai == nullptr) {
+        LOG_ERROR << "getaddrinfo: can not resolve address!\n";
+        return;
+    }
+
     *this = Address(ai->ai_addr, ai->ai_addrlen);
 }
 
