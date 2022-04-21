@@ -129,7 +129,7 @@ enum class HttpMethod
   None,
   };
 
-struct HttpStatusLine {
+struct HttpStatusLine { 
     /*
      * reqeust:  Method URI Version
      * response: Version StatusCode Description
@@ -161,6 +161,9 @@ struct HttpStatusLine {
     // http response
     HttpStatus status;
     std::string description;
+
+    static const std::string_view& get_method_name(HttpMethod method);
+    static HttpMethod get_method_enum(const std::string& method_name);
 };
 
 class HttpHeader {
@@ -207,7 +210,7 @@ class HttpBody {
     // 4. local proto
 public:
     HttpBody(const std::string& buf = "")
-        : _buf()
+        : _buf(buf)
         // , _parse_result()
     {}
 
@@ -288,6 +291,8 @@ public:
     // brief: parse string to HttpResponse
     // param str: serialized HttpRequest.
     static HttpResponse from_string(const std::string& str);
+
+    void set_body(const HttpBody& body) { get_body() = body; }
 };
 
 #endif

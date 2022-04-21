@@ -10,10 +10,10 @@ static constexpr std::string_view methods[] = {
     "None",
 };
 
-static const std::string_view& GetMethodName(HttpMethod method) {
+const std::string_view& HttpStatusLine::get_method_name(HttpMethod method) {
     return methods[static_cast<int>(method)];
 }
-static HttpMethod GetMethodEnum(const std::string& method_name) {
+HttpMethod HttpStatusLine::get_method_enum(const std::string& method_name) {
     int n = sizeof(methods) / sizeof(std::string_view);
     // LOG_INFO << "n = " << n << "\n";
     for (int i = 0; i < n; ++i) {
@@ -84,7 +84,7 @@ HttpHeader HttpHeader::get_header_from_string(const std::string& str) {
 std::string HttpRequest::to_string() {
     std::stringstream ss;
     // status line
-    ss << GetMethodName(get_status_line().method) << ' ' 
+    ss << HttpStatusLine::get_method_name(get_status_line().method) << ' ' 
        << get_status_line().uri << ' ' 
        << get_status_line().version << "\r\n";
 
@@ -111,7 +111,7 @@ HttpRequest HttpRequest::from_string(const std::string& str) {
     // status line
     std::string::size_type n1, n2;
     n1 = s_status_line.find(' ');
-    HttpMethod method = GetMethodEnum(s_status_line.substr(0, n1));
+    HttpMethod method = HttpStatusLine::get_method_enum(s_status_line.substr(0, n1));
     n2 = s_status_line.find(' ', n1 + 1);
     std::string uri = s_status_line.substr(n1 + 1, n2 - n1 - 1);
     std::string version = s_status_line.substr(n2 + 1);
@@ -158,7 +158,7 @@ std::string HttpResponse::to_string() {
     // status line
     ss << get_status_line().version << ' ' 
        << std::to_string(static_cast<int>(get_status_line().status)) << ' ' 
-       << GetMethodName(get_status_line().method) << ' ' 
+       << HttpStatusLine::get_method_name(get_status_line().method) << ' ' 
        << get_status_line().description << "\r\n";
        
 
