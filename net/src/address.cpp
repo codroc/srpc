@@ -4,6 +4,7 @@
 #include "config.h"
 #include <string.h>
 #include <string>
+#include <iostream>
 
 
 // static ConfigVar<std::string>::ptr unix_domain_pathname = Config::lookup(
@@ -62,4 +63,8 @@ const struct addrinfo Address::make_hits(int ai_flags, int ai_family) {
     hits.ai_flags = ai_flags;
     hits.ai_family = ai_family;
     return hits;
+}
+
+std::ostream& operator<<(std::ostream& os, const Address& addr) {
+    return os << addr.to_string();
 }
