@@ -1,0 +1,5 @@
+srpc:
+    net:
+        socket:
+            tcpsocket_certificate_path: "127.0.0.1/cert.pem"
+            tcpsocket_private_key_path: "127.0.0.1/private.pem"
