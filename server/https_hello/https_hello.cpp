@@ -5,6 +5,7 @@
 
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include <string>
 #include <filesystem>
@@ -12,8 +13,13 @@
 #include <fstream>
 #include <sstream>
 #include <streambuf>
+#include <csignal>
 
 // brief: a simple server just provide a hello.html file to client.
+
+void SigChildHandler(int signum) {
+    ::wait(0);
+}
 
 // brief: 用来识别一个完整的 HTTP 包
 bool IsComplete(const std::string& msg) {
@@ -59,6 +65,7 @@ int main(int argc, char** argv) {
         std::cout << "usage: ./https_hello config.yaml\n";
         return 0;
     }
+    signal(SIGCHLD, SigChildHandler);
     Config::loadFromYaml(argv[1]);
 
     SocketOptions opts;
