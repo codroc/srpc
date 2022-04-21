@@ -6,6 +6,12 @@
 
 #include <string>
 #include <iostream>
+#include <csignal>
+
+void SignalHandler(int signum) {
+    std::cout << "SIGPIPE received!\n";
+    ::exit(signum);
+}
 
 std::pair<std::string, std::string> GetHostAndUri(const std::string& url) {
     std::string host_name;
@@ -53,6 +59,9 @@ int main(int argc, char** argv) {
         LOG_INFO << "usage: ./wget http://www.bing.com/\n";
         return 0;
     }
+
+    signal(SIGPIPE, SignalHandler);
+
     std::string url = argv[1];
     std::string::size_type n = url.find(':');
     std::string protocal = "http"; // default protocal is http/1.1
@@ -60,36 +69,45 @@ int main(int argc, char** argv) {
          protocal = url.substr(0, n);
     }
 
-    if (protocal == "http") {
-        auto p = GetHostAndUri(url);
-        SocketOptions ops;
-        ops.blocking = true;
+    if (protocal == "http" || protocal == "https") {
+        try {
+            auto p = GetHostAndUri(url);
+            SocketOptions ops;
+            ops.blocking = true;
+            ops.use_ssl = protocal == "https";
 
-        // 阻塞 socket
-        TCPSocket sock(ops);
-        sock.connect(p.first, "http");
+            // 阻塞 socket
+            TCPSocket sock(ops);
+            sock.connect(p.first, protocal);
 
-        HttpHeader::MapType header = {
-            {"host", p.first},
-            {"user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"},
-            {"connection", "close"},
-        };
-        HttpRequest req(HttpMethod::GET, p.second, header);
-        sock.send(req.to_string());
-        std::string recv_msg;
-        std::string msg = sock.recv();
-        while (!msg.empty()) {
-            recv_msg += msg;
-            msg = sock.recv();
+            HttpHeader::MapType header = {
+                {"host", p.first},
+                {"user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"},
+                {"connection", "close"},
+            };
+            HttpRequest req(HttpMethod::GET, p.second, header);
+            req.get_header().insert({"content-length", "0"});
+            // 阻塞 send: 如果发送缓冲区大小 < 要发送的字节流长度，会被一直阻塞
+            // 也就是说 阻塞的 send 保证了，仅调用一次就能把用户的数据 copy 到内核发送缓冲区。
+            sock.send(req.to_string());
+            std::string recv_msg;
+            // 阻塞 recv: 只有接收缓冲区有字节（一个也行）就会返回
+            // 因此要多次 recv
+            std::string msg = sock.recv();
+            while (!msg.empty()) {
+                recv_msg += msg;
+                msg = sock.recv();
+            }
+            if (protocal == "https")
+                std::cout << "You are using HTTP over SSL!\n";
+            std::cout << "HttpRequest:  -----------------------------------------------------------------------\n";
+            std::cout << req.to_string();
+            std::cout << "HttpResponse: -----------------------------------------------------------------------\n";
+            std::cout << recv_msg;
+            std::cout << "-------------------------------------------------------------------------------------\n";
+        } catch (std::exception& e) {
+            std::cout << e.what();
         }
-        std::cout << "HttpRequest:  -----------------------------------------------------------------------\n";
-        std::cout << req.to_string();
-        std::cout << "HttpResponse: -----------------------------------------------------------------------\n";
-        std::cout << recv_msg;
-        std::cout << "-----------------------------------------------------------------------\n";
-    } else if (protocal == "https") {
-        LOG_INFO << "Don't support https now.\n";
-        return 0;
     } else {
         LOG_INFO << "Unknow protocal [" << protocal << "]!\n";
         return 1;

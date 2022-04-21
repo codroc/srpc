@@ -4,6 +4,12 @@
 #include "file_descriptor.h"
 #include "address.h"
 
+// ssl
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/conf.h>
+#include <openssl/evp.h>
+
 #include <memory>
 #include <string>
 
@@ -39,6 +45,10 @@ struct SocketOptions {
 
     // brief: If set, disable the Nagle algorithm. (ref: man7::tcp)
     bool tcp_nodelay{};
+
+    // suport ssl
+    // just suport tcp now
+    bool use_ssl{};
 
     // brief: set socket options
     void set_options(int fd);
@@ -92,6 +102,32 @@ public:
     Address get_local_address() const;
     // brief: get peer address
     Address get_peer_address() const;
+
+    // ssl
+    static int ssl_init();
+    
+    Socket(const Socket&) = delete;
+    Socket& operator=(const Socket&) = delete;
+    Socket(Socket&& rhs) 
+        : FDescriptor(std::move(static_cast<FDescriptor>(rhs)))
+    {
+        _ssl_ctx = rhs._ssl_ctx;
+        _ssl = rhs._ssl;
+
+        rhs._ssl_ctx = NULL;
+        rhs._ssl = NULL;
+    }
+    Socket& operator=(Socket&& rhs) {
+        _ssl_ctx = rhs._ssl_ctx;
+        _ssl = rhs._ssl;
+
+        rhs._ssl_ctx = NULL;
+        rhs._ssl = NULL;
+        return *this;
+    }
+protected:
+    SSL_CTX* _ssl_ctx{};
+    SSL* _ssl{};
 };
 
 // Note: The appropriate size of UDP datagram is 576 bytes.
@@ -110,6 +146,9 @@ private:
     // brief: used by accept
     // TCPSocket(int fd);
     TCPSocket(int fd, const SocketOptions& opts);
+
+    //brief: for accept a ssl sock
+    TCPSocket(int fd, const SocketOptions& opts, SSL_CTX* ctx, SSL* ssl);
 public:
     // TCPSocket();
     TCPSocket(const SocketOptions& opts = SocketOptions());
