@@ -18,7 +18,8 @@
 // brief: a simple server just provide a hello.html file to client.
 
 void SigChildHandler(int signum) {
-    ::wait(0);
+    int ret;
+    while ((ret = ::waitpid(0, 0, WNOHANG)) > 0);
 }
 
 // brief: 用来识别一个完整的 HTTP 包
@@ -67,20 +68,23 @@ bool CacheFileData(const std::string& file) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::cout << "usage: ./https_hello config.yaml\n";
+    Logger::setLevel(Logger::LEVEL::WARN);
+    if (argc < 3) {
+        std::cout << "usage: ./https_hello [http|https] config.yaml\n";
         return 0;
     }
     signal(SIGCHLD, SigChildHandler);
-    Config::loadFromYaml(argv[1]);
-
+    Config::loadFromYaml(argv[2]);
+    
+    std::string protocal(argv[1]);
     SocketOptions opts;
     opts.blocking = true;
-    opts.use_ssl = true;
+    opts.use_ssl = protocal == "https";
     opts.reuseaddr = true;
     TCPSocket serv(opts);
 
-    serv.bind("0.0.0.0", 443);
+    uint16_t port = protocal == "https" ? 443 : 80;
+    serv.bind("0.0.0.0", protocal);
     serv.listen();
     
     if (!CacheFileData("hello.html"))
