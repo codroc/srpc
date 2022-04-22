@@ -31,9 +31,15 @@ bool IsComplete(const std::string& msg) {
     HttpRequest req = HttpRequest::from_string(msg.substr(0, n + 2 + 2));
     std::string len(req.get_header()["content-length"]);
     if (len.empty()) {
-        LOG_ERROR << "No content-length field in Http header.\n";
-        ::exit(1);
+        // 尚不支持 transfer-encoding: chunked
+        if (req.get_status_line().method != HttpMethod::GET) {
+            LOG_ERROR << "No content-length field in Http header.\n";
+            ::exit(1);
+        }
+        return true;
     }
+    
+    // 规定是不能是 GET
     int l = std::atoi(len.c_str());
     if (msg.size() - req.to_string().size() > l) {
         LOG_ERROR << "Received more than one package!\n";
@@ -71,9 +77,10 @@ int main(int argc, char** argv) {
     SocketOptions opts;
     opts.blocking = true;
     opts.use_ssl = true;
+    opts.reuseaddr = true;
     TCPSocket serv(opts);
 
-    serv.bind("127.0.0.1", 443);
+    serv.bind("0.0.0.0", 443);
     serv.listen();
     
     if (!CacheFileData("hello.html"))

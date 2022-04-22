@@ -1,6 +1,7 @@
 #include "socket.h"
 #include "flog.h"
 #include "config.h"
+#include "ssl_socket.h"
 #include <sys/types.h>
 #include <socket.h>
 #include <string.h>
@@ -132,7 +133,7 @@ void SocketOptions::set_options(int fd) {
 
     // use_ssl
     if (use_ssl) {
-        static int ret = Socket::ssl_init();
+        static int ret = SslSocketImpl::ssl_init();
     }
 }
 
@@ -142,6 +143,7 @@ static ConfigVar<size_t>::ptr recv_size_limited = Config::lookup("srpc.net.socke
 Socket::Socket(int fd, const SocketOptions& o)
     : FDescriptor(fd)
     , opts(o)
+    , _sss_impl(std::make_shared<SslSocketImpl>())
 {
     opts.set_options(fd);
 }
@@ -150,14 +152,8 @@ Socket::Socket(int domain, int type, const SocketOptions& o)
     : Socket(::socket(domain, type, 0), o)
 {}
 
-Socket::~Socket() {
-    if (_ssl) {
-        SSL_shutdown(_ssl);
-        SSL_free(_ssl);
-        if (_ssl_ctx)
-            SSL_CTX_free(_ssl_ctx);
-    }
-}
+Socket::~Socket() 
+{}
 
 void Socket::bind(const Address& addr) {
     syscall("Socket::bind", ::bind(fd(), addr, addr.size()));
@@ -175,29 +171,8 @@ void Socket::connect(const Address& addr) {
     syscall("Socket::connect", ::connect(fd(), addr, addr.size()));
 
     // ssl
-    if (opts.use_ssl) {
-        _ssl_ctx = SSL_CTX_new(TLS_client_method());
-        if (_ssl_ctx == NULL) {
-            LOG_ERROR << "SSL_CTX_new error!\n";
-            return;
-        }
-
-        // 对证书进行验证
-        // SSL_CTX_set_verify(_ssl_ctx, SSL_VERIFY_PEER, NULL);
-        // 设置信任根证书
-        // if (SSL_CTX_load_verify_locations(_ssl_ctx, "/home/cwp/ca/certs/ca.cert.pem", NULL) <= 0) {
-        //     ERR_print_errors_fp(stdout);
-        //     return;
-        // }
-        _ssl = SSL_new(_ssl_ctx);
-        if (_ssl == NULL) {
-            LOG_ERROR << "SSL_new error!\n";
-            return;
-        }
-
-        SSL_set_fd(_ssl, fd());
-
-        SSL_connect(_ssl);
+    if (opts.use_ssl && _sss_impl) {
+        _sss_impl->connect(fd());
     }
 }
 
@@ -255,57 +230,17 @@ void Socket::send(const char* msg) {
     }
     // ssl
     if (opts.use_ssl) {
-        if (SSL_write(_ssl, msg, ::strlen(msg)) <= 0) {
-            LOG_WARN << "SSL_write is not success!\n";
-            return;
-        }
+        _sss_impl->send(msg);
     } else
         syscall("Socket::send", ::send(fd(), msg, ::strlen(msg), 0));
 }
-void SSL_error_info(int ret) {
-    switch(ret) {
-        case SSL_ERROR_ZERO_RETURN:
-            LOG_INFO << "No more data can be read!\n";
-            break;
-        case SSL_ERROR_WANT_READ:
-            LOG_INFO << "The operation did not complete and can be retried later.\n";
-            break;
-        case SSL_ERROR_WANT_X509_LOOKUP:
-            LOG_INFO << "SSL_ERROR_WANT_X509_LOOKUP\n";
-            break;
-        case SSL_ERROR_WANT_ASYNC:
-            LOG_INFO << "SSL_ERROR_WANT_ASYNC\n";
-            break;
-        case SSL_ERROR_WANT_ASYNC_JOB:
-            LOG_INFO << "SSL_ERROR_WANT_ASYNC_JOB\n";
-            break;
-        case SSL_ERROR_WANT_CLIENT_HELLO_CB:
-            LOG_INFO << "SSL_ERROR_WANT_CLIENT_HELLO_CB\n";
-            break;
-        case SSL_ERROR_SYSCALL:
-            LOG_INFO << "SSL_ERROR_SYSCALL\n"
-                << "errno = " << errno
-                << ", strerror: " << ::strerror(errno);
-            break;
-        case SSL_ERROR_SSL:
-            LOG_INFO << "SSL_ERROR_SSL\n";
-            break;
-        case SSL_ERROR_NONE:
-            LOG_INFO << "The TLS/SSL I/O operation completed.\n";
-            break;
-        default:
-            LOG_WARN << "SSL_read is not success!\n";
-    }
-}
+
 std::string Socket::recv(size_t limited) {
     size_t recv_size = std::min(recv_size_limited->getValue(), limited);
     char buf[recv_size + 1]{};
     if (opts.use_ssl) {
-        int ret = SSL_read(_ssl, buf, sizeof buf);
-        if (ret <= 0) {
-            SSL_error_info(SSL_get_error(_ssl, ret));
-            return {};
-        }
+        int ret = _sss_impl->recv(buf, sizeof buf);
+        if (ret <= 0) return {};
     } else
         syscall("Socket::recv", ::recv(fd(), buf, sizeof buf, 0));
     return buf;
@@ -324,34 +259,6 @@ Address Socket::get_peer_address() const {
     return {&addr, len};
 }
 
-int Socket::ssl_init() {
-#if OPENSSL_VERSION_NUMBER >= 0x10100003L
-
-    if (OPENSSL_init_ssl(OPENSSL_INIT_LOAD_CONFIG, NULL) == 0)
-    {
-        LOG_ERROR << "OPENSSL_init_ssl() failed!\n";
-        return -1;
-    }
-
-    /*
-     * OPENSSL_init_ssl() may leave errors in the error queue
-     * while returning success
-     */
-
-    ERR_clear_error();
-
-#else
-
-    OPENSSL_config(NULL);
-
-    SSL_library_init();         // 初始化SSL算法库函数( 加载要用到的算法 )，调用SSL函数之前必须调用此函数
-    SSL_load_error_strings();   // 错误信息的初始化
-
-    OpenSSL_add_all_algorithms();
-
-#endif
-    return 0;
-}
 // -----------------------------------------------------------------------------------------UDPSocket
 UDPSocket::UDPSocket(const SocketOptions& opts)
     : Socket(AF_INET, SOCK_DGRAM, opts)
@@ -378,68 +285,28 @@ TCPSocket::TCPSocket(const SocketOptions& opts)
 {}
 
 TCPSocket::TCPSocket(int fd, const SocketOptions& opts, SSL_CTX* ctx, SSL* ssl) 
+// TCPSocket::TCPSocket(int fd, const SocketOptions& opts, const SslSocketImpl& sss_impl) 
     : Socket(fd, opts)
 {
-    _ssl_ctx = ctx;
-    _ssl = ssl;
+    _sss_impl->init(ctx, ssl);
 }
 
-static ConfigVar<std::string>::ptr tcpsocket_certificate_path = 
-        Config::lookup("srpc.net.socket.tcpsocket_certificate_path", 
-                static_cast<std::string>("/tmp/xxx.PEM"), "path of certificate.");
-
-static ConfigVar<std::string>::ptr tcpsocket_private_key_path = 
-        Config::lookup("srpc.net.socket.tcpsocket_private_key_path", 
-                static_cast<std::string>("/tmp/xxx_pk.PEM"), "path of private key.");
-
 void TCPSocket::listen() {
-    if (opts.use_ssl) {
-        _ssl_ctx = SSL_CTX_new(TLS_server_method());
-        if (_ssl_ctx == NULL) {
-            LOG_ERROR << "SSL_CTX_new error! Communication is not safe!\n";
-            return;
-        }
-        // load certificate chains
-        if (SSL_CTX_use_certificate_file(_ssl_ctx, tcpsocket_certificate_path->getValue().c_str(), SSL_FILETYPE_PEM) != 1) 
-        {
-            LOG_ERROR << "SSL_CTX_use_certificate_chain_file error! Communication is not safe!\n";
-            return;
-        }
-        // load private key
-        if (1 != SSL_CTX_use_PrivateKey_file(_ssl_ctx, tcpsocket_private_key_path->getValue().c_str(), SSL_FILETYPE_PEM)) {
-            LOG_ERROR << "SSL_CTX_use_PrivateKey_file error! Communication is not safe!\n";
-            return;
-        }
-        // check private key
-        if (1 != SSL_CTX_check_private_key(_ssl_ctx)) {
-            LOG_ERROR << "SSL_CTX_check_private_key error! Communication is not safe!\n";
-            return;
-        }
+    if (opts.use_ssl && _sss_impl) {
+        _sss_impl->listen();
     }
 
     syscall("TCPSocket::listen", ::listen(fd(), 10));
 }
 
 TCPSocket TCPSocket::accept() {
-    int ret = syscall_ret("TCPSocket::accept", ::accept(fd(), NULL, NULL));
-    if (ret < 0) return {};
+    int rv = syscall_ret("TCPSocket::accept", ::accept(fd(), NULL, NULL));
+    if (rv < 0) return {};
     
-    if (opts.use_ssl && _ssl_ctx) {
-        _ssl = SSL_new(_ssl_ctx);
-        if (_ssl == NULL) {
-            LOG_ERROR << "SSL_new error!\n";
-            return {};
-        }
-        SSL_set_fd(_ssl, ret);
-        int rv = SSL_accept(_ssl);
-        if (rv == -1) {
-            LOG_ERROR << "ssl accept\n";
-            SSL_error_info(SSL_get_error(_ssl, rv));
-            ::exit(1);
-        }
-        return {ret, get_socket_options(), NULL, _ssl};
+    if (opts.use_ssl && _sss_impl) {
+        return {rv, get_socket_options(), NULL, _sss_impl->accept(rv)};
     }
-    return {ret, get_socket_options()};
+    return {rv, get_socket_options()};
 }
 
 // -----------------------------------------------------------------------------------------UnixSocket

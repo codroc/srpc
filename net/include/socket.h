@@ -5,10 +5,8 @@
 #include "address.h"
 
 // ssl
+class SslSocketImpl;
 #include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/conf.h>
-#include <openssl/evp.h>
 
 #include <memory>
 #include <string>
@@ -102,32 +100,8 @@ public:
     Address get_local_address() const;
     // brief: get peer address
     Address get_peer_address() const;
-
-    // ssl
-    static int ssl_init();
-    
-    Socket(const Socket&) = delete;
-    Socket& operator=(const Socket&) = delete;
-    Socket(Socket&& rhs) 
-        : FDescriptor(std::move(static_cast<FDescriptor>(rhs)))
-    {
-        _ssl_ctx = rhs._ssl_ctx;
-        _ssl = rhs._ssl;
-
-        rhs._ssl_ctx = NULL;
-        rhs._ssl = NULL;
-    }
-    Socket& operator=(Socket&& rhs) {
-        _ssl_ctx = rhs._ssl_ctx;
-        _ssl = rhs._ssl;
-
-        rhs._ssl_ctx = NULL;
-        rhs._ssl = NULL;
-        return *this;
-    }
 protected:
-    SSL_CTX* _ssl_ctx{};
-    SSL* _ssl{};
+    std::shared_ptr<SslSocketImpl> _sss_impl;
 };
 
 // Note: The appropriate size of UDP datagram is 576 bytes.
@@ -149,6 +123,7 @@ private:
 
     //brief: for accept a ssl sock
     TCPSocket(int fd, const SocketOptions& opts, SSL_CTX* ctx, SSL* ssl);
+    // TCPSocket(int fd, const SocketOptions& opts, const SslSocketImpl& sss_impl);
 public:
     // TCPSocket();
     TCPSocket(const SocketOptions& opts = SocketOptions());
