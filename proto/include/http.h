@@ -214,6 +214,11 @@ public:
         // , _parse_result()
     {}
 
+    HttpBody(const char* p)
+        : _buf(p)
+        // , _parse_result()
+    {}
+
     // brief: return byte stream which is not parsed.
     std::string& as_string() { return _buf; }
 
