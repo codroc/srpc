@@ -46,7 +46,7 @@ public:
     SSL* accept(int fd);
 
     // brief: send a msg by SSL_write
-    void send(const char* msg);
+    size_t send(const char* msg);
 
     // brief: recv a msg safely
     // param buf: data will be fill in buf

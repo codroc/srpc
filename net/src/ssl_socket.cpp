@@ -177,11 +177,12 @@ SSL* SslSocketImpl::accept(int fd) {
     return ssl;
 }
 
-void SslSocketImpl::send(const char* msg) {
+size_t SslSocketImpl::send(const char* msg) {
     int ret = SSL_write(_ssl, msg, ::strlen(msg));
     if (ret <= 0) {
         SSL_error_info(SSL_get_error(_ssl, ret), "SslSocketImpl::send is not success!\n");
     }
+    return ret;
 };
 
 int SslSocketImpl::recv(char* buf, size_t len) {

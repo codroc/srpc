@@ -202,7 +202,11 @@ void Socket::sendto(const std::string& msg, const std::string& ip, const std::st
     sendto(msg, {ip, port});
 }
 
-void Socket::send(const std::string& msg) {
+size_t Socket::send(std::string_view msg) {
+    return send(msg.data());
+}
+
+size_t Socket::send(const std::string& msg) {
     // can also see in file /proc/sys/net/core/wmem_default or 
     // /proc/sys/net/core/wmem_max
     // size_t max_snd_buf{};
@@ -215,9 +219,9 @@ void Socket::send(const std::string& msg) {
     //         << msg.size() << " bytes!\n";
     //     return;
     // }
-    send(msg.c_str());
+    return send(msg.c_str());
 }
-void Socket::send(const char* msg) {
+size_t Socket::send(const char* msg) {
     size_t max_snd_buf{};
     socklen_t optlen = sizeof max_snd_buf;
     syscall("getsockopt", ::getsockopt(fd(), SOL_SOCKET, SO_SNDBUF, &max_snd_buf, &optlen));
@@ -226,13 +230,13 @@ void Socket::send(const char* msg) {
             << max_snd_buf
             << " but, you are going to send "
             << ::strlen(msg) << " bytes!\n";
-        return;
+        // return 0;
     }
     // ssl
     if (opts.use_ssl) {
-        _sss_impl->send(msg);
+        return _sss_impl->send(msg);
     } else
-        syscall("Socket::send", ::send(fd(), msg, ::strlen(msg), 0));
+        return syscall_ret("Socket::send", ::send(fd(), msg, ::strlen(msg), 0));
 }
 
 std::string Socket::recv(size_t limited) {
