@@ -219,7 +219,12 @@ size_t Socket::send(const std::string& msg) {
     //         << msg.size() << " bytes!\n";
     //     return;
     // }
-    return send(msg.c_str());
+    // fix me: you can not directly call send(const char* msg), because ::strlen see '\0'
+    // return send(msg.c_str());
+    if (opts.use_ssl) {
+        return _sss_impl->send(msg);
+    } else
+        return syscall_ret("Socket::send", ::send(fd(), msg.data(), msg.size(), 0));
 }
 size_t Socket::send(const char* msg) {
     size_t max_snd_buf{};

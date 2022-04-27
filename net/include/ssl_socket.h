@@ -47,6 +47,7 @@ public:
 
     // brief: send a msg by SSL_write
     size_t send(const char* msg);
+    size_t send(const std::string& msg);
 
     // brief: recv a msg safely
     // param buf: data will be fill in buf

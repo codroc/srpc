@@ -177,6 +177,14 @@ SSL* SslSocketImpl::accept(int fd) {
     return ssl;
 }
 
+size_t SslSocketImpl::send(const std::string& msg) {
+    int ret = SSL_write(_ssl, msg.data(), msg.size());
+    if (ret <= 0) {
+        SSL_error_info(SSL_get_error(_ssl, ret), "SslSocketImpl::send is not success!\n");
+    }
+    return ret;
+}
+
 size_t SslSocketImpl::send(const char* msg) {
     int ret = SSL_write(_ssl, msg, ::strlen(msg));
     if (ret <= 0) {
