@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+
+#include <iostream>
 namespace {
 
 TEST(Socket, UDPSocket) {
@@ -104,7 +106,7 @@ TEST(Socket, UDPSocket) {
     }
 }
 
-TEST(Socket, TCPSocket) {
+TEST(Socket, TCPSocketBasic) {
     {
         // brief: test commu
         TCPSocket serv;
@@ -118,6 +120,84 @@ TEST(Socket, TCPSocket) {
         //     sock.send("echo: " + msg);
         //     msg = sock.recv();
         // }
+    }
+}
+
+TEST(TCPSocket, SendMessageWithStdString) {
+    std::string msg1("abc\0abc");
+
+    SocketOptions opts;
+    opts.reuseaddr = true;
+    opts.blocking = true;
+    TCPSocket serv(opts);
+    serv.bind("127.0.0.1", 7878);
+    serv.listen();
+    TCPSocket sock = serv.accept();
+    size_t written = 0;
+    while (written < msg1.size()) {
+        written += sock.send(msg1);
+    }
+    EXPECT_EQ(written, msg1.size());
+}
+
+TEST(Socket, TCPSocketBigMessage) {
+    {
+        // brief: send big msg
+        std::string msg1(9000, 'c');
+
+        SocketOptions opts;
+        opts.reuseaddr = true;
+        opts.blocking = true;
+        TCPSocket serv(opts);
+        serv.bind("127.0.0.1", 7878);
+        serv.listen();
+        TCPSocket sock = serv.accept();
+        size_t written = 0;
+        while (written < msg1.size()) {
+            written += sock.send(msg1.data() + written);
+        }
+        EXPECT_EQ(written, msg1.size());
+    }
+
+    {
+        // brief: send big msg
+        std::string msg1(262600, 'a');
+
+        SocketOptions opts;
+        opts.reuseaddr = true;
+        opts.blocking = true;
+        TCPSocket serv(opts);
+        serv.bind("127.0.0.1", 7878);
+        serv.listen();
+        TCPSocket sock = serv.accept();
+        size_t written = 0;
+        while (written < msg1.size()) {
+            written += sock.send(msg1.data() + written);
+        }
+        EXPECT_EQ(written, msg1.size());
+    }
+
+}
+
+TEST(TCPSocket, SuperBigMessage) {
+    {
+        // brief: send supper big msg
+        std::string msg1(4900000, 'a');
+
+        SocketOptions opts;
+        opts.reuseaddr = true;
+        opts.blocking = true;
+        TCPSocket serv(opts);
+        serv.bind("127.0.0.1", 7878);
+        serv.listen();
+        TCPSocket sock = serv.accept();
+        size_t written = 0;
+        // size_t w_p = 10000;
+        while (written < msg1.size()) {
+            written += sock.send(msg1.data() + written);
+            // std::cout << written << "\n";
+        }
+        EXPECT_EQ(written, msg1.size());
     }
 }
 
