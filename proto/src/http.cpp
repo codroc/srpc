@@ -1,7 +1,10 @@
 #include "http.h"
 #include "flog.h"
 
+#include <ctype.h>
+
 #include <sstream>
+#include <algorithm>
 
 static constexpr std::string_view methods[] = {
 #define XX(num, name, string) #name,
@@ -69,8 +72,28 @@ HttpHeader HttpHeader::get_header_from_string(const std::string& str) {
         header.insert(HttpHeader::get_pair(line));
         n += 2;
     }
-    header.insert(HttpHeader::get_pair(str.substr(last)));
+    if (!str.substr(last).empty())
+        header.insert(HttpHeader::get_pair(str.substr(last)));
     return header;
+}
+
+std::string_view HttpHeader::operator[](const std::string& key) {
+    std::string lower_key; lower_key.resize(key.size());
+    std::transform(key.begin(), key.end(), lower_key.begin(), ::tolower);
+    if (_headers.find(lower_key) == _headers.end())
+        return {};
+    return _headers[lower_key];
+}
+
+void HttpHeader::insert(const std::string& key, const std::string& value) {
+    std::string lower_key; lower_key.resize(key.size());
+    std::transform(key.begin(), key.end(), lower_key.begin(), ::tolower);
+    _headers[lower_key] = value;
+}
+void HttpHeader::insert(std::pair<std::string, std::string> p) {
+    std::string lower_key; lower_key.resize(p.first.size());
+    std::transform(p.first.begin(), p.first.end(), lower_key.begin(), ::tolower);
+    _headers[lower_key] = p.second;
 }
 
 // std::string_view HttpBody::parse(const std::string& cnt_type) {

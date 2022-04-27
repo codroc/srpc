@@ -177,22 +177,14 @@ public:
     auto begin() { return _headers.begin(); }
     auto end() { return _headers.end(); }
 
-    std::string_view operator[](const std::string& key) {
-        if (_headers.find(key) == _headers.end())
-            return {};
-        return _headers[key];
-    }
+    std::string_view operator[](const std::string& key);
 
     // brief: get total counts of headers
     size_t counts() const { return _headers.size(); }
 
     // insert a header to _headers
-    void insert(const std::string& key, const std::string& value) {
-        _headers[key] = value;
-    }
-    void insert(std::pair<std::string, std::string> p) {
-        _headers[p.first] = p.second;
-    }
+    void insert(const std::string& key, const std::string& value);
+    void insert(std::pair<std::string, std::string> p);
 
     static HttpHeader get_header_from_string(const std::string& str);
 private:
@@ -220,7 +212,7 @@ public:
     {}
 
     // brief: return byte stream which is not parsed.
-    std::string& as_string() { return _buf; }
+    const std::string& as_string() const { return _buf; }
 
     // brief: parse the byte stream by Content-Type
     // param cnt_type: Content-Type
