@@ -171,8 +171,11 @@ public:
     using MapType = std::unordered_map<std::string, std::string>;
     // brief: Http header use key-value mode.
     HttpHeader(MapType headers = MapType())
-        : _headers(headers)
-    {}
+    {
+        for (auto p : headers) {
+            insert(p);
+        }
+    }
 
     auto begin() { return _headers.begin(); }
     auto end() { return _headers.end(); }

@@ -17,6 +17,9 @@ TEST(HTTP, HttpRequest) {
         HttpRequest request(HttpMethod::GET, "/", headers);
         EXPECT_EQ(str, request.to_string());
     }
+}
+
+TEST(HTTP, HttpRequestWithHeader) {
     
     {
         // test: HttpRequest::to_string 
@@ -27,13 +30,15 @@ TEST(HTTP, HttpRequest) {
 
         std::string str = 
             "GET / HTTP/1.1\r\n"
-            "Host: www.example.com\r\n"
+            "host: www.example.com\r\n"
             "\r\n";
 
         HttpRequest request(HttpMethod::GET, "/", headers);
         EXPECT_EQ(str, request.to_string());
     }
+}
 
+TEST(HTTP, HttpRequestWithoutBody) {
     {
         // test: HttpRequest::from_string 
         // Note: without body
@@ -58,7 +63,9 @@ TEST(HTTP, HttpRequest) {
         EXPECT_EQ(req.get_header()["Content-Length"], headers["Content-Length"]);
         EXPECT_EQ(req.get_body().as_string(), "");
     }
+}
 
+TEST(HTTP, HttpRequestOperator) {
     {
         // test: HttpHeader::operator[]
         // Note: without body

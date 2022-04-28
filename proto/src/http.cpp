@@ -72,8 +72,6 @@ HttpHeader HttpHeader::get_header_from_string(const std::string& str) {
         header.insert(HttpHeader::get_pair(line));
         n += 2;
     }
-    if (!str.substr(last).empty())
-        header.insert(HttpHeader::get_pair(str.substr(last)));
     return header;
 }
 
@@ -153,7 +151,7 @@ HttpRequest HttpRequest::from_string(const std::string& str) {
         return HttpRequest(method, uri);
     }
     std::string s_headers = str.substr(end_pos_of_status_line + 2, 
-            end_pos_of_headers - end_pos_of_status_line - 2);
+            end_pos_of_headers - end_pos_of_status_line);
 
     std::string::size_type start_pos_of_body = end_pos_of_headers + 2 + 2;
     std::string s_body = str.substr(start_pos_of_body);
