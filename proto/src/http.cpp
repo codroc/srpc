@@ -168,6 +168,25 @@ HttpRequest HttpRequest::from_string(const std::string& str) {
     return HttpRequest(method, uri, headers, s_body);
 }
 
+// 目前不支持 multipart/mixed
+void HttpRequest::construct_form_data_from_string(std::string_view view) {
+    while (view != "--" + boundary + "--") {
+        view.remove_prefix(2 + boundary.size() + 2);
+        std::string_view sv_header = view.substr(0, view.find("\r\n\r\n") + 2);
+        Form form;
+        form.header = HttpHeader::get_header_from_string(std::string(sv_header));
+        view.remove_prefix(view.find("\r\n\r\n") + 4);
+        if (form.header["Content-Disposition"].empty()) {
+            LOG_ERROR << "must include Content-Dispostion field in form-data!\n";
+            return;
+        }
+        std::string::size_type end_pos = view.find("--" + boundary);
+        form.value = view.substr(0, end_pos);
+        view.remove_prefix(end_pos);
+        form_data.push_back(form);
+    }
+}
+
 HttpBase::HttpBase(HttpStatus status_code, HttpHeader h, HttpBody b)
     : _status_line(status_code, GetDescription(status_code))
     , _header(h)

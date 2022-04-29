@@ -4,6 +4,8 @@
 // 仅支持 HTTP/1.1 不需要旧版本的 HTTP 了！
 
 #include <string>
+#include <string_view>
+#include <vector>
 #include <unordered_map>
 
 /* Status Codes */
@@ -248,6 +250,8 @@ public:
 
     HttpBody& get_body() { return _body; }
     const HttpBody& get_body() const { return _body; }
+
+    void set_body(const HttpBody& body) { get_body() = body; }
 protected:
     HttpStatusLine _status_line;
     HttpHeader _header;
@@ -256,6 +260,14 @@ protected:
 
 class HttpRequest : public HttpBase {
 public:
+    struct Form {
+        Form() = default;
+        // real data
+        std::string value;
+        // meta data
+        HttpHeader header;
+    };
+
     /* 
      * Method uri version
      * request header
@@ -264,6 +276,8 @@ public:
      */
     HttpRequest(HttpMethod m, const std::string& uri, HttpHeader h = HttpHeader(), HttpBody b = HttpBody())
         : HttpBase(m, uri, h, b)
+        , boundary()
+        , form_data()
     {}
 
     // brief: translate HttpRequst to string
@@ -272,6 +286,17 @@ public:
     // brief: parse string to HttpRequst
     // param str: serialized HttpRequest.
     static HttpRequest from_string(const std::string& str);
+
+    // brief: construct vector of Form by form data with boundaries such as:
+    // ------asdasdwqfvasva
+    // hello
+    // ------asdasdwqfvasva
+    // world
+    // ------asdasdwqfvasva--
+    void construct_form_data_from_string(std::string_view view);
+
+    std::string boundary;
+    std::vector<Form> form_data;
 };
 
 class HttpResponse : public HttpBase {
@@ -291,8 +316,6 @@ public:
     // brief: parse string to HttpResponse
     // param str: serialized HttpRequest.
     static HttpResponse from_string(const std::string& str);
-
-    void set_body(const HttpBody& body) { get_body() = body; }
 };
 
 #endif
