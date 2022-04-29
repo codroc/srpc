@@ -247,12 +247,13 @@ size_t Socket::send(const char* msg) {
 std::string Socket::recv(size_t limited) {
     size_t recv_size = std::min(recv_size_limited->getValue(), limited);
     char buf[recv_size + 1]{};
+    size_t readed = 0;
     if (opts.use_ssl) {
         int ret = _sss_impl->recv(buf, sizeof buf);
         if (ret <= 0) return {};
     } else
-        syscall("Socket::recv", ::recv(fd(), buf, sizeof buf, 0));
-    return buf;
+        readed = syscall_ret("Socket::recv", ::recv(fd(), buf, sizeof buf, 0));
+    return {buf, readed};
 }
 
 Address Socket::get_local_address() const {
