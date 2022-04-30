@@ -7,9 +7,8 @@
 #include "ssl_socket.h"
 #include "address.h"
 #include "http.h"
-
-// urldecoder
-#include "urldecoder.h"
+#include "package_extractor.h"
+#include "encoder.h"
 
 // rapidjson
 #include "rapidjson/document.h"
@@ -21,6 +20,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <fstream>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -38,12 +38,14 @@ public:
     using FuncTypeInternal = std::function<void (TCPSocket*, const std::string&)>;
     using MapType = std::unordered_map<std::string, FuncType>;
     using MapTypeInternal = std::unordered_map<std::string, FuncTypeInternal>;
+    using UploadFunc = std::function<void (TCPSocket*, const std::vector<HttpRequest::Form>&)>;
     Router() = default;
 
     void parse(const HttpRequest& req, TCPSocket* sock);
 
     static void RegistMethod(const std::string& uri, FuncType method);
     static void RegistMethod(const std::string& uri, FuncTypeInternal method);
+    static void RegistMethod(const std::string& uri, UploadFunc method);
 private:
     static std::string GetPath(const std::string& uri) {
         // /v1/list/xxx
@@ -61,19 +63,21 @@ private:
 private:
     static MapType _mp;
     static MapTypeInternal _mp_internal;
+    static UploadFunc _upload_method;
 };
 
 Router::MapType Router::_mp;
 Router::MapTypeInternal Router::_mp_internal;
+Router::UploadFunc Router::_upload_method;
 
 void Router::parse(const HttpRequest& req, TCPSocket* sock) {
     std::string uri = req.get_status_line().uri;
+    uri = urlDecode(uri.c_str());
     std::string path = GetPath(uri);
     // 如果是上传
     if (req.get_status_line().method == HttpMethod::POST and 
             uri == "/upload") {
-        auto method = _mp_internal["/upload"];
-        method(sock, req.get_body().as_string());
+        _upload_method(sock, req.form_data);
         return;
     }
 
@@ -100,6 +104,10 @@ void Router::RegistMethod(const std::string& path, Router::FuncType method) {
 
 void Router::RegistMethod(const std::string& path, Router::FuncTypeInternal method) {
     _mp_internal[path] = method;
+}
+
+void Router::RegistMethod(const std::string& uri, UploadFunc method) {
+    _upload_method = method;
 }
 
 void SigChildHandler(int signum) {
@@ -199,7 +207,6 @@ void init() {
         res.set_body(json_data);
         res.get_header().insert({"Content-Length", std::to_string(json_data.size())});
 
-        // LOG_INFO << "json_data: " << json_data << "\n";
         sock->send(res.to_string());
         
     };
@@ -207,11 +214,33 @@ void init() {
 
     Router::RegistMethod("/v1/upload", Router::FuncType(std::bind(router_send_book, std::placeholders::_1, "upload.html")));
 
-    auto router_upload = [](TCPSocket* sock, const std::string& content) {
+    auto router_upload = [](TCPSocket* sock, const std::vector<HttpRequest::Form>& form_data) {
         // 1. 解析内容，它是 multipart/form-data 格式的
         // 2. 把内容保存到文件里
         // 服务器仅支持 pdf 上传
 
+        std::string content;
+        // for (auto f : form_data) {
+            auto f = form_data[0];
+            std::string_view sv(f.header["content-disposition"]);
+            std::string filename;
+            // name="/v1/list"
+            // filename="chrome.png"
+            if (sv.find("name") != std::string::npos) {
+                sv.remove_prefix(sv.find("name"));
+                sv.remove_prefix(4 + 1 + 1 + 4);
+                filename += std::string(sv.substr(0, sv.find("\""))) + "/";
+            }
+            if (sv.find("filename") != std::string::npos) {
+                sv.remove_prefix(sv.find("filename"));
+                sv.remove_prefix(8 + 1 + 1);
+                filename += std::string(sv.substr(0, sv.find("\"")));
+            }
+            std::cout << "filename = " << filename << " value size: " << f.value.size() << "\n";
+            std::ofstream output;
+            output.open(filename, std::ofstream::binary);
+            output << f.value;
+        // }
         HttpResponse res(HttpStatus::OK);
         res.get_header().insert({"Content-Type", "text/plain;charset=utf-8"});
         res.set_body("okokok\n");
@@ -220,45 +249,6 @@ void init() {
         sock->send(res.to_string());
     };
     Router::RegistMethod("/upload", router_upload);
-}
-
-bool IsComplete(const std::string& msg) {
-    // 出现 \r\n\r\n 了，就表示 HTTP 头结束了，接下来的是 HTTP body，
-    // body 的长度可以根据 header 中 content-length 字段值来确定；如果
-    // 在传输时不能确定长度，应该使用 transfer-encoding: chunked
-    // 如果传输的是表单，就用 content-type: multipart/form-data
-    std::string::size_type n = msg.find("\r\n\r\n");
-    if (n == std::string::npos) return false;
-    HttpRequest req = HttpRequest::from_string(msg.substr(0, n + 2 + 2));
-    std::string len(req.get_header()["content-length"]);
-    if (len.empty()) {
-        HttpMethod m = req.get_status_line().method;
-        if (m == HttpMethod::GET) return true;
-        else {
-            if (m == HttpMethod::POST) {
-                if (req.get_header()["Content-Type"] == "multipart/form-data"){
-                    LOG_ERROR << "Not support form-data now.\n";
-                    ::exit(1);
-                } else if (req.get_header()["Transfer-Encoding"] == "chunked") {
-                    LOG_ERROR << "Not support chunked now.\n";
-                    ::exit(1);
-                } else {
-                    LOG_ERROR << "Unknow!\n";
-                    ::exit(1);
-                }
-            } else {
-                LOG_ERROR << "Not support " << static_cast<int>(m) << " now.\n";
-                ::exit(1);
-            }
-        }
-    }
-    
-    int l = std::atoi(len.c_str());
-    if (msg.size() - req.to_string().size() > l) {
-        LOG_ERROR << "Received more than one package!\n";
-        ::exit(1);
-    } else if (msg.size() - req.to_string().size() < l) return false;
-    return true;
 }
 
 int main(int argc, char** argv) {
@@ -290,28 +280,37 @@ int main(int argc, char** argv) {
             // 目前仅支持客户端从服务器下载一个文件，不支持上传一个文件
             // 客户端发起一个短连接，发送完一个 HTTP package 后即主动断开连接
             // tcp 收到的 byte stream
-            std::string byte_stream;
-            while (!IsComplete(byte_stream)) {
-                byte_stream += client.recv();
-                // std::cout << byte_stream;
+            std::string msg = client.recv();
+            std::string byte_stream = msg;
+            HttpPackageExtractor pe;
+            while (pe.extract(byte_stream).empty() && !msg.empty()) {
+                // 这里浏览器有时候会莫名其妙建立 2 个连接，
+                // 但只在一个连接上发送 HTTP Request，导致阻塞，见 srpc 开发日志
+                //
+                // fix me:
+                // 这里存在严重的安全问题。如果对面只建立连接，不发数据，那么会产生大量阻塞进程，
+                // 最终导致系统崩溃
+                msg = client.recv();
+                byte_stream += msg;
             }
-            HttpRequest req = HttpRequest::from_string(byte_stream);
+            std::cout << "bytestream size = " << byte_stream.size() << "\tmsg size = " << msg.size() << "\n";
+            auto vec = pe.extract(byte_stream);
+            if (vec.empty()) {
+                LOG_ERROR << "extract failed!\n";
+                return 1;
+            }
+            HttpRequest req = vec[0]; // 短连接，只接受 一个 HttpRequest 包
             // 当前服务器仅支持 GET method
             HttpMethod m = req.get_status_line().method;
-            if (m == HttpMethod::GET) {
+            if (m == HttpMethod::GET || m == HttpMethod::POST) {
                 // uri 中包含需要调用的方法以及传入的参数
                 Router r;
                 r.parse(req, &client);
-                return 0;
-            } else if (m == HttpMethod::POST) {
-                Router r;
-                r.parse(req, &client);
-                return 0;
             } else {
                 LOG_INFO << "Invaild http request: \n" << 
                     req.to_string();
-                    return 1;
             }
+            return 0;
         }
         client = std::move(TCPSocket());
     }
