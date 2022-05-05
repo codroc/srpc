@@ -24,3 +24,7 @@ target_include_directories(file_descriptor_test PUBLIC ${PROJECT_SOURCE_DIR}/inc
 add_executable(socket_test src/socket.cpp src/ssl_socket.cpp src/file_descriptor.cpp src/address.cpp test/gtest_main.cpp test/socket_test.cpp)
 target_link_libraries(socket_test gtest cpputils yaml-cpp stdc++fs ssl crypto pthread)
 target_include_directories(socket_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(buffer_test src/buffer.cpp test/gtest_main.cpp test/buffer_test.cpp)
+target_link_libraries(buffer_test gtest pthread)
+target_include_directories(buffer_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
