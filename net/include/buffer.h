@@ -22,6 +22,7 @@ public:
 
     // 从 buffer 的可读位置开始，偷瞄 len 个字节
     std::string peek(size_t len) const;
+    std::string peek_all() const { return peek(readable()); }
 
     // 从 buffer 的可读位置开始，删除 len 个字节
     void pop_out(size_t len);
@@ -44,11 +45,18 @@ public:
     // param data: 要写入的数据
     // return: 返回写入的长度
     size_t append(const std::string& data);
+    size_t append(const char* p, size_t len);
 
     // 重置 buffer
     void reset() {
         _read_pos = _write_pos = 0;
+        _storage.clear();
     }
+
+    // 为了方便后续从 buffer 中解包出来，定义一些获取特殊数据的接口
+    // protobuf 传输方式采用 muduo 7.5.3 节中的方式
+    int32_t peek_int32() const;
+    void append_int32(int32_t val);
 private:
     // 获取可读内容的起始位置
     const char* read_begin() const { return _storage.data() + _read_pos; }
