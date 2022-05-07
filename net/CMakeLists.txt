@@ -30,13 +30,13 @@ target_link_libraries(buffer_test gtest pthread)
 target_include_directories(buffer_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(evl_0 src/eventloop.cpp test/evl_0.cpp)
-target_link_libraries(evl_0 pthread cpputils)
+target_link_libraries(evl_0 pthread cpputils net)
 target_include_directories(evl_0 PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(evl_1 src/eventloop.cpp test/evl_1.cpp)
-target_link_libraries(evl_1 pthread cpputils)
+target_link_libraries(evl_1 pthread cpputils net)
 target_include_directories(evl_1 PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(evl_2 src/eventloop.cpp test/evl_2.cpp)
-target_link_libraries(evl_2 pthread cpputils)
+target_link_libraries(evl_2 pthread cpputils net)
 target_include_directories(evl_2 PUBLIC ${PROJECT_SOURCE_DIR}/include)

@@ -1,12 +1,15 @@
 #include "eventloop.h"
+#include "channel.h"
 #include "flog.h"
+
 #include <chrono>
+#include <vector>
 
 thread_local EventLoop* t_eventloop = nullptr;
 
 EventLoop::EventLoop()
     : _looping(false)
-    , _poll()
+    , _reactor()
     , _thread_id(std::this_thread::get_id())
 {
     if (t_eventloop) {
@@ -27,7 +30,16 @@ void EventLoop::loop() {
     assert_in_loop_thread();
     _looping = true;
 
-    std::chrono::seconds(5);
+    // 用于测试 evl_0 1 2
+    // std::chrono::seconds(5);
+    while (1) {
+        // 不断轮询
+        _channels.clear();
+        _reactor.poll(_channels);        
+        for (auto channel : _channels) {
+            channel->handle_event();
+        }
+    }
 
     _looping = false;
 }
@@ -35,4 +47,20 @@ void EventLoop::loop() {
 void EventLoop::abort_thread() {
     LOG_ERROR << "Not in loop thread! Abort thread now!\n";
     exit(-1);
+}
+
+void EventLoop::updata_channel(Channel* channel) {
+    if (channel->is_added_to_reactor()) {
+        if (channel->get_events() == Channel::kNoneEvent) {// 删除
+            _reactor.unenroll(channel, channel->get_events());
+            channel->add_to_reactor(false);
+        }
+        else {// 更新
+            _reactor.updata(channel, channel->get_events());
+        }
+    } else {
+        // 注册
+        _reactor.enroll(channel, channel->get_events());
+        channel->add_to_reactor(true);
+    }
 }
