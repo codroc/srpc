@@ -12,11 +12,11 @@ public:
     static const uint32_t kWriteEvent;
 public:
     using Callback = std::function<void()>;
-    Channel(EventLoop* loop, FDescriptor fd);
+    Channel(EventLoop* loop, int fd);
     ~Channel() = default;
     
     // 返回一个 封装过的 fd，具体看 file_descriptor.h
-    FDescriptor get_fd() const { return _fd; }
+    int fd() const { return _fd; }
     
     // 让 eventloop 去调用，然后 channel 根据具体的 IO 事件分发为不同回调
     void handle_event() const;
@@ -34,13 +34,19 @@ public:
     void set_events(uint32_t events) { _events = events; }
 
     // 注册/更新/删除 channel 到 io multiplexing 机制中去
-     void updata();
+    void updata();
 
     bool is_added_to_reactor() const { return _added_to_reactor; }
     void add_to_reactor(bool flag) { _added_to_reactor = flag; }
+
+public:
+    // Channel() = default;
+    // 允许拷贝
+    Channel(const Channel&) = default;
+    Channel& operator=(const Channel&) = default;
 private:
     EventLoop* _loop;
-    FDescriptor _fd;
+    int _fd;
 
     Callback _read_callback;
     Callback _write_callback;

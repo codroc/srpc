@@ -6,7 +6,7 @@ const uint32_t Channel::kNoneEvent = 0;
 const uint32_t Channel::kReadEvent = EPOLLIN | EPOLLPRI; // see [man 2 poll] POLLPRI
 const uint32_t Channel::kWriteEvent= EPOLLOUT;
 
-Channel::Channel(EventLoop* loop, FDescriptor fd) 
+Channel::Channel(EventLoop* loop, int fd) 
     : _loop(loop)
     , _fd(fd)
     , _read_callback()

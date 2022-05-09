@@ -9,3 +9,6 @@ target_link_libraries(https_hello proto)
 
 add_executable(https_ft https_ft/https_ft.cpp)
 target_link_libraries(https_ft proto stdc++fs)
+
+add_executable(mt_discard https_mt_echo/discard.cpp)
+target_link_libraries(mt_discard net proto)

@@ -18,7 +18,7 @@ void Epoll::updata(void* data, uint32_t events) {
     struct epoll_event ev{};
     ev.data.ptr = data;
     ev.events = events;
-    int fd = reinterpret_cast<Channel*>(data)->get_fd().fd();
+    int fd = reinterpret_cast<Channel*>(data)->fd();
     if (-1 == ::epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ev)) {
         LOG_ERROR << "Epoll::updata error! " << ::strerror(errno) << "\n"; 
         ::exit(-1);
@@ -29,7 +29,7 @@ void Epoll::enroll(void* data, uint32_t events) {
     struct epoll_event ev{};
     ev.data.ptr = data;
     ev.events = events;
-    int fd = reinterpret_cast<Channel*>(data)->get_fd().fd();
+    int fd = reinterpret_cast<Channel*>(data)->fd();
     if (-1 == ::epoll_ctl(_epfd, EPOLL_CTL_ADD, fd, &ev)) {
         LOG_ERROR << "Epoll::enroll error! " << ::strerror(errno) << "\n"; 
         ::exit(-1);
@@ -37,7 +37,7 @@ void Epoll::enroll(void* data, uint32_t events) {
 }
 
 void Epoll::unenroll(void* data, uint32_t events) {
-    int fd = reinterpret_cast<Channel*>(data)->get_fd().fd();
+    int fd = reinterpret_cast<Channel*>(data)->fd();
     if (-1 == ::epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, NULL)) {
         LOG_ERROR << "Epoll::unenroll error! " << ::strerror(errno) << "\n"; 
         ::exit(-1);
