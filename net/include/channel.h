@@ -4,6 +4,7 @@
 #include "file_descriptor.h"
 #include <functional>
 
+// Channel 不可以被拷贝！因为在析构时需要执行 unregister 操作！
 class EventLoop;
 class Channel {
 public:
