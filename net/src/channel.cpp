@@ -14,6 +14,14 @@ Channel::Channel(EventLoop* loop, int fd)
     , _error_callback()
 {}
 
+Channel::~Channel() {
+    // Channel 必须在析构之前，注销在 epoll 中的注册，防止空悬指针
+    if (is_added_to_reactor()) {
+        set_events(kNoneEvent);
+        updata();
+    }
+}
+
 void Channel::handle_event() const {
     if (get_revents() | kReadEvent and _read_callback) {
         _read_callback();

@@ -13,7 +13,7 @@ public:
 public:
     using Callback = std::function<void()>;
     Channel(EventLoop* loop, int fd);
-    ~Channel() = default;
+    ~Channel();
     
     // 返回一个 封装过的 fd，具体看 file_descriptor.h
     int fd() const { return _fd; }
@@ -41,9 +41,9 @@ public:
 
 public:
     // Channel() = default;
-    // 允许拷贝
-    Channel(const Channel&) = default;
-    Channel& operator=(const Channel&) = default;
+    // 不允许拷贝
+    Channel(const Channel&) = delete;
+    Channel& operator=(const Channel&) = delete;
 private:
     EventLoop* _loop;
     int _fd;
