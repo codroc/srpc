@@ -202,11 +202,11 @@ void Socket::sendto(const std::string& msg, const std::string& ip, const std::st
     sendto(msg, {ip, port});
 }
 
-size_t Socket::send(std::string_view msg) {
+ssize_t Socket::send(std::string_view msg) {
     return send(msg.data());
 }
 
-size_t Socket::send(const std::string& msg) {
+ssize_t Socket::send(const std::string& msg) {
     // can also see in file /proc/sys/net/core/wmem_default or 
     // /proc/sys/net/core/wmem_max
     // size_t max_snd_buf{};
@@ -226,7 +226,7 @@ size_t Socket::send(const std::string& msg) {
     } else
         return syscall_ret("Socket::send", ::send(fd(), msg.data(), msg.size(), 0));
 }
-size_t Socket::send(const char* msg) {
+ssize_t Socket::send(const char* msg) {
     size_t max_snd_buf{};
     socklen_t optlen = sizeof max_snd_buf;
     syscall("getsockopt", ::getsockopt(fd(), SOL_SOCKET, SO_SNDBUF, &max_snd_buf, &optlen));
@@ -247,13 +247,13 @@ size_t Socket::send(const char* msg) {
 std::string Socket::recv(size_t limited) {
     size_t recv_size = std::min(recv_size_limited->getValue(), limited);
     char buf[recv_size + 1]{};
-    size_t readed = 0;
+    ssize_t readed = 0;
     if (opts.use_ssl) {
-        int ret = _sss_impl->recv(buf, sizeof buf);
-        if (ret <= 0) return {};
+        readed = _sss_impl->recv(buf, sizeof buf);
     } else
         readed = syscall_ret("Socket::recv", ::recv(fd(), buf, sizeof buf, 0));
-    return {buf, readed};
+    if (readed <= 0) return {};
+    return {buf, static_cast<std::string::size_type>(readed)};
 }
 
 ssize_t Socket::recv(std::string& str, size_t limited) {
