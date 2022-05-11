@@ -96,6 +96,7 @@ public:
     size_t send(const char* msg);
 
     std::string recv(size_t limited = std::numeric_limits<size_t>::max());
+    ssize_t recv(std::string& str, size_t limited = std::numeric_limits<size_t>::max());
 
     // brief: get local address
     Address get_local_address() const;
@@ -109,6 +110,7 @@ protected:
 // see detial on https://blog.csdn.net/luojian5900339/article/details/78472137
 class UDPSocket : public Socket {
 public:
+    using ptr = std::shared_ptr<UDPSocket>;
     UDPSocket(const SocketOptions& opts = SocketOptions());
 
     // brief: receive msg from socket
@@ -126,6 +128,7 @@ private:
     TCPSocket(int fd, const SocketOptions& opts, SSL_CTX* ctx, SSL* ssl);
     // TCPSocket(int fd, const SocketOptions& opts, const SslSocketImpl& sss_impl);
 public:
+    using ptr = std::shared_ptr<TCPSocket>;
     // TCPSocket();
     TCPSocket(const SocketOptions& opts = SocketOptions());
 
@@ -140,6 +143,7 @@ private:
     // brief: used by accept
     UnixSocket(int fd, const SocketOptions& opts);
 public:
+    using ptr = std::shared_ptr<UnixSocket>;
     // brief: use SOCK_UNIX domain
     // and SOCK_SEQPACKET socket type. This is a connection-orianted and message bounded 
     // socket type. So the program just like tcp

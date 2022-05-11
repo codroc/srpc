@@ -256,6 +256,19 @@ std::string Socket::recv(size_t limited) {
     return {buf, readed};
 }
 
+ssize_t Socket::recv(std::string& str, size_t limited) {
+    size_t recv_size = std::min(recv_size_limited->getValue(), limited);
+    char buf[recv_size + 1]{};
+    ssize_t readed = 0;
+    if (opts.use_ssl)
+        readed = _sss_impl->recv(buf, sizeof buf);
+    else
+        readed = syscall_ret("Socket::recv", ::recv(fd(), buf, sizeof buf, 0));
+    if (readed <= 0) return readed;
+    str = {buf, static_cast<std::string::size_type>(readed)};
+    return readed;
+}
+
 Address Socket::get_local_address() const {
     struct sockaddr addr;
     socklen_t len = sizeof addr;
