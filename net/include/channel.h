@@ -3,6 +3,7 @@
 
 #include "file_descriptor.h"
 #include <functional>
+#include <memory>
 
 // Channel 不可以被拷贝！因为在析构时需要执行 unregister 操作！
 class EventLoop;
@@ -13,6 +14,7 @@ public:
     static const uint32_t kWriteEvent;
 public:
     using Callback = std::function<void()>;
+    using ptr = std::shared_ptr<Channel>;
     Channel(EventLoop* loop, int fd);
     ~Channel();
     
