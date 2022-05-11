@@ -20,7 +20,7 @@ public:
 
     bool is_in_loop_thread() { return _thread_id == std::this_thread::get_id(); }
 
-    void loop();
+    void loop(int timeout = -1);
 
     // 注册/更新 Channel
     void updata_channel(Channel* channel);

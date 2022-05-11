@@ -25,7 +25,7 @@ EventLoop::~EventLoop() {
     t_eventloop = nullptr;
 }
 
-void EventLoop::loop() {
+void EventLoop::loop(int timeout) {
     assert(!_looping);
     assert_in_loop_thread();
     _looping = true;
@@ -35,7 +35,7 @@ void EventLoop::loop() {
     while (1) {
         // 不断轮询
         _channels.clear();
-        _reactor.poll(_channels);        
+        _reactor.poll(_channels, timeout);
         for (auto channel : _channels) {
             channel->handle_event();
         }

@@ -90,10 +90,10 @@ public:
     // brief: send msg to peer, can be override by TCPSocket and UDPSocket.
     // Because tcp has connection, we don't have to specifiy an address. But udp must connect before call send
     // param msg: msg which is going to be sent
-    size_t send(const std::string& msg);
-    size_t send(std::string_view msg);
+    ssize_t send(const std::string& msg);
+    ssize_t send(std::string_view msg);
     // overload: accept c-type string
-    size_t send(const char* msg);
+    ssize_t send(const char* msg);
 
     std::string recv(size_t limited = std::numeric_limits<size_t>::max());
     ssize_t recv(std::string& str, size_t limited = std::numeric_limits<size_t>::max());
