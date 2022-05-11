@@ -59,8 +59,10 @@ void EventLoop::updata_channel(Channel* channel) {
             _reactor.updata(channel, channel->get_events());
         }
     } else {
-        // 注册
-        _reactor.enroll(channel, channel->get_events());
-        channel->add_to_reactor(true);
+        if (channel->get_events() != Channel::kNoneEvent) {
+            // 注册
+            _reactor.enroll(channel, channel->get_events());
+            channel->add_to_reactor(true);
+        }
     }
 }
