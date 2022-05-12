@@ -16,10 +16,13 @@ std::map<int, TCPSocketPtr> g_sockets;
 std::map<int, ChannelPtr> g_channels;
 
 // fix me: 把 TCPSocket 和 Channel 封装到 TCPConnection 类中去
-void handle_read(EventLoop* loop, TCPSocketPtr sock, ChannelPtr channel) {
-    std::string str = sock->recv();
-    int n = str.size();
-    if (n < 0) { // fix me: string::size 是不可能返回 n < 0 这种情况的。这里怎么办？
+void handle_read(EventLoop* loop, std::weak_ptr<Socket> w_sock, std::weak_ptr<Channel> w_channel) {
+    if (w_sock.expired() || w_channel.expired()) return;
+    auto sock = w_sock.lock();
+    auto channel = w_channel.lock();
+    std::string str;
+    ssize_t n = sock->recv(str);
+    if (n < 0) {
         std::cout << "read error! str error: "
                   << ::strerror(errno) << "\n";
         exit(-1);
@@ -29,6 +32,9 @@ void handle_read(EventLoop* loop, TCPSocketPtr sock, ChannelPtr channel) {
              << "] closed!\n";
         channel->set_events(Channel::kNoneEvent);
         channel->updata();
+        int fd = channel->fd();
+        g_sockets.erase(fd);
+        g_channels.erase(fd);
     } else {
         std::cout << "connection [" << sock->get_peer_address().ip()
              << ":" << sock->get_peer_address().port()
@@ -45,20 +51,17 @@ void handle_accept(EventLoop* loop, TCPSocket* serv) {
              << ":" << client->get_peer_address().port()
              << "]\n";
         ChannelPtr channel = std::make_shared<Channel>(loop, fd);   
-        // fix me: 这里因为 client 和 channel 的生命周期要超过当前作用域
-        // 如何优雅的延长这两者的生命周期？
         g_sockets.insert({fd, client});
         g_channels.insert({fd, channel});
 
-        // fix me: 如果用 map::operator[] 那么一定要求 value 具有默认构造函数
-        // 很明显，我不想 Channel 存在 Channel::Channel() 那么只能用 find 的方法吗？
-        g_channels.find(fd)->second->set_events(Channel::kReadEvent);
-        g_channels.find(fd)->second->set_read_callback(std::bind(handle_read, loop, g_sockets.find(fd)->second, g_channels.find(fd)->second));
-        g_channels.find(fd)->second->set_error_callback([]() {
+        channel->set_events(Channel::kReadEvent);
+        channel->set_read_callback(std::bind(handle_read, loop, std::weak_ptr<Socket>(client), 
+                    std::weak_ptr<Channel>(channel)));
+        channel->set_error_callback([]() {
                 std::cout << "error!\n";
                 exit(-1);
                 });
-        g_channels.find(fd)->second->updata();
+        channel->updata();
     } else {
         std::cout << "accept error!\n";
         exit(-1);
