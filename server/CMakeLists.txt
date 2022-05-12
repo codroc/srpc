@@ -12,3 +12,6 @@ target_link_libraries(https_ft proto stdc++fs)
 
 add_executable(mt_discard https_mt_echo/discard.cpp)
 target_link_libraries(mt_discard net proto)
+
+add_executable(mt_time mt/time.cpp)
+target_link_libraries(mt_time net proto)
