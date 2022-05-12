@@ -36,6 +36,30 @@ public:
     uint32_t get_events() const { return _events; }
     void set_events(uint32_t events) { _events = events; }
 
+    // 监视 可读 事件
+    void monitor_read(bool flag) {
+        if (flag)
+            _events |= kReadEvent;
+        else
+            _events &= ~kReadEvent;
+        updata();
+    }
+
+    // 监视 可写 事件
+    void monitor_write(bool flag) {
+        if (flag)
+            _events |= kWriteEvent;
+        else
+            _events &= ~kWriteEvent;
+        updata();
+    }
+
+    // 不监视事件
+    void monitor_nothing() {
+        _events = kNoneEvent;
+        updata();
+    }
+
     // 注册/更新/删除 channel 到 io multiplexing 机制中去
     void updata();
 

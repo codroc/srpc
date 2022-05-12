@@ -6,6 +6,7 @@
 #include "ssl_socket.h"
 #include "channel.h"
 #include "buffer.h"
+#include "tcp_connection.h"
 
 #endif
 
