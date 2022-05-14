@@ -9,7 +9,7 @@ class EventLoop;
 class Acceptor {
 public:
     using Callback = std::function<void()>;
-    Acceptor(EventLoop* loop, TCPSocket::ptr socket);
+    Acceptor(EventLoop* loop, TCPSocket::ptr socket, Address addr);
     void handle_read();
 
     void listen() {
@@ -17,6 +17,7 @@ public:
         _channel->monitor_read(true);
     }
 
+    TCPSocket accept() { return _sock->accept(); }
     void set_callback(Callback cb) { _cb = cb; }
 private:
     EventLoop* _loop;

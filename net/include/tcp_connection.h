@@ -17,34 +17,57 @@ public:
     using ptr = std::shared_ptr<TCPConnection>;
     using MessageCallback = std::function<void(TCPConnection::ptr, Buffer&)>;
     using ConnectionCallback = std::function<void(TCPConnection::ptr)>;
+    using CloseCallback = ConnectionCallback;
+    TCPConnection(EventLoop* loop, const TCPSocket::ptr& socket);
+    ~TCPConnection();
+
     enum class Status {
         kConnecting,
         kConnected,
-        kClosed,
+        kDisconnected, // 表示 写端 正在关闭
     };
-    TCPConnection(EventLoop* loop, const TCPSocket::ptr& socket);
+    // brief: 主动关闭连接，用户可以调用
+    void force_close();
 
-    void handle_read();
-    void handle_write();
+    // brief: 判断连接是否建立，可以被用户调用
+    bool connected() const { return _status == Status::kConnected; }
 
-    size_t send(const std::string& msg);
-    size_t send(const char* msg, int len);
+    // brief: 3 个 send 都能由用户调用，因此线程不安全
+    void send(const std::string& msg);
+    void send(const char* msg, int len);
 
     // c-style string (terminate with '\0')
-    size_t send(const char* msg);
+    void send(const char* msg);
 
+    // brief: 用户调用
     void set_message_callback(MessageCallback cb) { _message_callback = cb; }
     void set_connection_callback(ConnectionCallback cb) { _connection_callback = cb; }
+
+    // brief: 不可以被用户调用
+    void set_status(Status s) { _status = s; }
+
+    // brief: 用户不能调用，让 TCPServer 去调用
+    void set_close_callback(CloseCallback cb) { _close_callback = cb; }
 
     Address get_peer_address() const { return _sock->get_peer_address(); }
     Address get_local_address() const { return _sock->get_peer_address(); }
 
-    // return fd
+    // brief: return fd，用户不能调用
     int fd() const { return _sock->fd(); }
+
+    // brief: 在 TCPConnection 析构前调用的最后一个方法，用户不能调用，TCPServer 调用
+    void connect_destroyed();
 public:
     // 不允许被拷贝
     TCPConnection(const TCPConnection&) = delete;
     TCPConnection& operator=(const TCPConnection&) = delete;
+private:
+    void handle_read();
+    void handle_write();
+    void handle_error();
+    void handle_close();
+    // brief: 只能由 IO 线程调用，线程安全
+    void send_in_loop(const std::string& msg);
 private:
     EventLoop* _loop{};
     TCPSocket::ptr _sock;
@@ -61,6 +84,8 @@ private:
     // callback
     MessageCallback _message_callback;
     ConnectionCallback _connection_callback;
+    // 这个回调仅仅供 TCPServer 使用，用于从它的 map 中移除该 TCPConnection
+    CloseCallback _close_callback;
 };
 
 #endif
