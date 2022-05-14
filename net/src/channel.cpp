@@ -16,6 +16,7 @@ Channel::Channel(EventLoop* loop, int fd)
 
 Channel::~Channel() {
     // Channel 必须在析构之前，注销在 epoll 中的注册，防止空悬指针
+    // 并且 Channel 的析构，必须在 IO 线程中进行
     if (is_added_to_reactor()) {
         set_events(kNoneEvent);
         updata();
