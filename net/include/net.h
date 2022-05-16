@@ -7,6 +7,7 @@
 #include "channel.h"
 #include "buffer.h"
 #include "tcp_connection.h"
+#include "tcp_server.h"
 
 #endif
 
