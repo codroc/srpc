@@ -19,7 +19,6 @@ TCPConnection::TCPConnection(EventLoop* loop, const TCPSocket::ptr& socket)
 {
     _channel->set_read_callback(std::bind(&TCPConnection::handle_read, this));
     _channel->set_write_callback(std::bind(&TCPConnection::handle_write, this));
-    _channel->monitor_read(true);
 }
 
 TCPConnection::~TCPConnection() {
@@ -139,4 +138,11 @@ void TCPConnection::send(const char* msg, int len) {
 // c-style string (terminate with '\0')
 void TCPConnection::send(const char* msg) {
     send(msg, ::strlen(msg));
+}
+
+void TCPConnection::established() {
+    assert(_status == Status::kConnecting);
+    set_status(Status::kConnected);
+    if (_connection_callback) _connection_callback(shared_from_this());
+    _channel->monitor_read(true);
 }

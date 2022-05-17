@@ -32,13 +32,12 @@ void TCPServer::handle_accept() {
         //      << ":" << conn->get_peer_address().port()
         //      << "]\n";
 
-        conn->set_status(TCPConnection::Status::kConnected);
         conn->set_message_callback(std::bind(&TCPServer::OnMessage, this, std::placeholders::_1, 
                     std::placeholders::_2));
         conn->set_connection_callback(std::bind(&TCPServer::OnConnection, this, std::placeholders::_1));
         conn->set_close_callback(std::bind(&TCPServer::OnClose, this, std::placeholders::_1));
 
-        this->OnConnection(conn);
+        _loop->run_in_loop(std::bind(&TCPConnection::established, conn));
 
         _conns.insert({fd, conn});
     } else {

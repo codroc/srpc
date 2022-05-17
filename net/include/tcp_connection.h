@@ -57,6 +57,9 @@ public:
 
     // brief: 在 TCPConnection 析构前调用的最后一个方法，用户不能调用，TCPServer 调用
     void connect_destroyed();
+
+    // brief: 当三次握手完成，accept 从 accept queue 中取出连接后，表示连接已建立 established
+    void established();
 public:
     // 不允许被拷贝
     TCPConnection(const TCPConnection&) = delete;
