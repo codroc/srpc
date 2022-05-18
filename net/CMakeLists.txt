@@ -40,3 +40,7 @@ target_include_directories(evl_1 PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_executable(evl_2 src/eventloop.cpp test/evl_2.cpp)
 target_link_libraries(evl_2 pthread cpputils net)
 target_include_directories(evl_2 PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(timer_test src/timer.cpp test/timer_test.cpp)
+target_link_libraries(timer_test pthread cpputils net)
+target_include_directories(timer_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
