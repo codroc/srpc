@@ -3,12 +3,35 @@
 
 #include "poll.h"
 #include "channel.h"
+#include "timer.h"
+#include "timer_channel.h"
 
 #include <unistd.h>
 
+#include <unordered_set>
+#include <vector>
 #include <thread>
 #include <functional>
 #include <mutex>
+#include <queue>
+
+struct TimerCmp {
+    bool operator()(const Timer::ptr& rhs, const Timer::ptr& lhs) const {
+        return rhs->expiration() > lhs->expiration(); 
+    }
+};
+
+struct TimerIdHash {
+    size_t operator()(const TimerId& rhs) const {
+        return std::hash<uint64_t>()(rhs.raw());
+    }
+};
+
+struct TimerIdCmp {
+    bool operator()(const TimerId& lhs, const TimerId& rhs) const {
+        return rhs.raw() == lhs.raw();
+    }
+};
 
 class EventLoop {
 public:
@@ -16,6 +39,8 @@ public:
     using ActivateChannels = std::vector<Channel*>;
     using Task = std::function<void()>;
     using Tasks = std::vector<Task>;
+    using TimerIds = std::unordered_set<TimerId, TimerIdHash, TimerIdCmp>;
+    using Timers = std::priority_queue<Timer::ptr, std::vector<Timer::ptr>, TimerCmp>;
     EventLoop();
     ~EventLoop();
 
@@ -37,6 +62,23 @@ public:
 
     void run_task();
 
+    // 定时器相关
+    TimerId run_at(Timer::TimePoint when, Timer::TimerCallback cb);
+
+    // brief: 默认是 秒
+    TimerId run_after(double duration, Timer::TimerCallback cb);
+    // std::chrono 的 duration 接口
+    TimerId run_after(std::chrono::seconds duration, Timer::TimerCallback cb);
+    TimerId run_after(std::chrono::milliseconds duration, Timer::TimerCallback cb);
+    TimerId run_after(std::chrono::microseconds duration, Timer::TimerCallback cb);
+
+    TimerId run_every(double duration, Timer::TimerCallback cb);
+    TimerId run_every(std::chrono::seconds duration, Timer::TimerCallback cb);
+    TimerId run_every(std::chrono::milliseconds duration, Timer::TimerCallback cb);
+    TimerId run_every(std::chrono::microseconds duration, Timer::TimerCallback cb);
+
+    void cancel_timer(TimerId id);
+public:
     // 删除 copy 函数
     EventLoop(const EventLoop&) = delete;
     EventLoop& operator=(const EventLoop&) = delete;
@@ -61,6 +103,15 @@ private:
 
     // eventfd to impletement wait/notify
     Channel _event_channel;
+
+private:
+    void on_timeout();
+    bool cancelled(Timer::ptr sp_timer) const;
+    void insert_timer_queue(Timer::ptr timer);
+private:
+    TimerChannel _timer_channel;
+    TimerIds _timer_ids;
+    Timers _timers;
 };
 
 #endif

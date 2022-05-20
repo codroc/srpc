@@ -1,16 +1,15 @@
 #include "timer.h"
 
-std::atomic<int64_t> Timer::s_timers{0};
+std::atomic<uint64_t> Timer::s_timers{0};
 
 Timer::Timer(TimerCallback cb, TimePoint when, std::chrono::microseconds interval)
     : _timer_callback(cb)
     , _expiration(when)
     , _repeat(interval > std::chrono::microseconds(0))
     , _interval(interval)
+    , _sequence(s_timers.fetch_add(1, std::memory_order_relaxed))
     , _valid(true)
-{
-    _sequence = s_timers.fetch_add(1, std::memory_order_relaxed);
-}
+{}
 
 Timer::Timer(TimerCallback cb, TimePoint when, std::chrono::seconds interval)
     : Timer(cb, when, std::chrono::microseconds(interval))

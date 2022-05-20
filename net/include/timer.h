@@ -6,9 +6,28 @@
 #include <atomic>
 #include <chrono>
 
+class TimerId {
+public:
+    TimerId()
+        : _id(0)
+        , _valid(false)
+    {}
+
+    TimerId(uint64_t id)
+        : _id(id)
+        , _valid(true)
+    {}
+
+    uint64_t raw() const { return _id; }
+    bool operator<(const TimerId& lhs) { return _id < lhs._id; }
+private:
+    uint64_t _id;
+    bool _valid;
+};
+
 class Timer {
 public:
-    using TimePoint = std::chrono::time_point<std::chrono::steady_clock>;
+    using TimePoint = std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds>;
     using ptr = std::shared_ptr<Timer>;
     using TimerCallback = std::function<void()>;
     // brief:
@@ -35,14 +54,14 @@ public:
 
     std::chrono::microseconds interval() const { return _interval; }
 
-    int64_t sequence() const { return _sequence; }
+    TimerId sequence() const { return _sequence; }
 
     void restart(TimePoint now);
     void restart(TimerCallback cb, TimePoint now);
 public:
     Timer(const Timer&) = delete;
     Timer& operator=(const Timer&) = delete;
-    static int64_t NumberOfTimer() { return s_timers.load(); }
+    static uint64_t NumberOfTimer() { return s_timers.load(); }
 private:
     // brief: 定时到期的回调函数
     TimerCallback _timer_callback;
@@ -57,10 +76,10 @@ private:
     const std::chrono::microseconds _interval;
 
     // brief: 目前系统中有多少个定时器
-    static std::atomic<int64_t> s_timers; 
+    static std::atomic<uint64_t> s_timers; 
 
     // brief: 该定时器的序号
-    int64_t _sequence{};
+    const TimerId _sequence;
 
     // brief: 定时器是否有效
     bool _valid;
