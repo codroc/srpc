@@ -147,8 +147,8 @@ void EventLoop::on_timeout() {
             insert_timer_queue(elem);
         }
     }
-    if (!_timers.empty())
-        _timer_channel.update_timerfd_expiration(_timers.top()->expiration());
+    // if (!_timers.empty())
+    //     _timer_channel.update_timerfd_expiration(_timers.top()->expiration());
 }
 
 TimerId EventLoop::run_at(Timer::TimePoint when, Timer::TimerCallback cb) {
