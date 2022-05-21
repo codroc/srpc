@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <any>
 
 // TCPConnection 表示一次 TCP 连接，它是不可再生的，一旦连接断开，这个对象就毫无意义了
 // TCPConnection 没有发起连接的功能，它默认情况下就是 已经建立好连接了，因此默认状态是 kConnecting
@@ -60,6 +61,11 @@ public:
 
     // brief: 当三次握手完成，accept 从 accept queue 中取出连接后，表示连接已建立 established
     void established();
+
+    // 上下文设置
+    void set_context(const std::any& context) { _context = context; }
+    std::any get_context() const { return _context; }
+    std::any& get_mutable_context() { return _context; }
 public:
     // 不允许被拷贝
     TCPConnection(const TCPConnection&) = delete;
@@ -89,6 +95,10 @@ private:
     ConnectionCallback _connection_callback;
     // 这个回调仅仅供 TCPServer 使用，用于从它的 map 中移除该 TCPConnection
     CloseCallback _close_callback;
+
+private:
+    // 用户保存该连接的上下文
+    std::any _context;
 };
 
 #endif
