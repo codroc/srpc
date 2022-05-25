@@ -68,7 +68,7 @@ static void LoadFromCfg() {
     if (!entry.exists()) {
         static int a = CalledOnce();
     } else {
-        Config::loadFromYaml(config_file);
+        Config::loadFromYaml(config_file.c_str());
     }
 }
 
