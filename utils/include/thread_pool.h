@@ -94,8 +94,10 @@ ThreadPool::ThreadPool(int n)
 
 ThreadPool::~ThreadPool() {
     assert(_stop.load());
-    for (int i = 0; i < _threads.size(); ++i)
-        _threads[i].join();
+    for (int i = 0; i < _threads.size(); ++i) {
+        if (_threads[i].joinable())
+            _threads[i].join();
+    }
 }
 
 template <typename Function, class... Args>

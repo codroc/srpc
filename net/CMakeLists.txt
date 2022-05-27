@@ -48,3 +48,7 @@ target_include_directories(timer_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_executable(timer_resolution_test src/timer.cpp test/timer_resolution_test.cpp)
 target_link_libraries(timer_resolution_test pthread cpputils net)
 target_include_directories(timer_resolution_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(timer_multithread_test src/timer.cpp test/timer_multithread_test.cpp)
+target_link_libraries(timer_multithread_test pthread cpputils net)
+target_include_directories(timer_multithread_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
