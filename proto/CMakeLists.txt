@@ -20,3 +20,6 @@ target_include_directories(mwget PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_executable(parser_test test/gtest_main.cpp test/parser_test.cpp src/parser.cpp)
 target_link_libraries(parser_test PUBLIC gtest pthread)
 target_include_directories(parser_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(rpc_test test/rpc_test.cpp src/rpc.cpp)
+target_include_directories(rpc_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
