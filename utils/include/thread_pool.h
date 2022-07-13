@@ -66,7 +66,8 @@ ThreadPool::ThreadPool(int n)
                 // 等待线程池启动
                 {
                     std::unique_lock<std::mutex> lock(_mu);
-                    _cv.wait(lock, [&]{ return !_stop.load(); });
+                    if (_stop.load())
+                        _cv.wait(lock, [&]{ return !_stop.load(); });
                 }
                 printf("thread %ld started\n", ::syscall(SYS_gettid));
 
