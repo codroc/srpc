@@ -6,14 +6,15 @@
 
 #define OPTIONSIZE 20
 
-struct RPCHeader { // 总共 10 个字节
-    uint32_t magic;
+struct RPCHeader { // 总共 8 个字节
+    uint16_t magic;
     uint8_t type : 1; // request/response
     uint8_t opt : 1; // 最多只能携带 20 字节的额外数据
     uint8_t serialization : 5;
     uint8_t : 1;
     uint8_t status;
-    uint32_t data_length;
+    uint16_t data_length;
+    uint16_t checksum;
 };
 
 struct RPCOption { // 最多只能存 20 个字节
