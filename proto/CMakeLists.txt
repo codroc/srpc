@@ -21,5 +21,6 @@ add_executable(parser_test test/gtest_main.cpp test/parser_test.cpp src/parser.c
 target_link_libraries(parser_test PUBLIC gtest pthread)
 target_include_directories(parser_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-add_executable(rpc_test test/rpc_test.cpp src/rpc.cpp)
-target_include_directories(rpc_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+add_executable(rpc_test test/rpc_test.cpp test/helloworld.cpp src/rpc/rpc.cpp src/rpc/message.cpp src/rpc/serialize.cpp src/rpc/codeco.cpp)
+target_link_libraries(rpc_test PUBLIC cpputils net ssl crypto pthread)
+target_include_directories(rpc_test PUBLIC ${PROJECT_SOURCE_DIR}/include/rpc)
