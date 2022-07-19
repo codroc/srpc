@@ -24,3 +24,7 @@ target_include_directories(parser_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_executable(rpc_test test/rpc_test.cpp test/helloworld.cpp src/rpc/rpc.cpp src/rpc/message.cpp src/rpc/serialize.cpp src/rpc/codeco.cpp)
 target_link_libraries(rpc_test PUBLIC cpputils net ssl crypto pthread)
 target_include_directories(rpc_test PUBLIC ${PROJECT_SOURCE_DIR}/include/rpc)
+
+add_executable(rpc_test_server test/rpc_test_server.cpp test/helloworld.cpp src/rpc/rpc.cpp src/rpc/message.cpp src/rpc/serialize.cpp src/rpc/codeco.cpp)
+target_link_libraries(rpc_test_server PUBLIC cpputils net ssl crypto pthread)
+target_include_directories(rpc_test_server PUBLIC ${PROJECT_SOURCE_DIR}/include/rpc)

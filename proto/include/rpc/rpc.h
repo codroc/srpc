@@ -25,13 +25,12 @@ struct RPCHeader { // 总共 8 个字节
 
 struct RPCOption { // 最多只能存 20 个字节
     RPCOption()
-        : data(0), len(0)
+        : data(0)
     {}
     ~RPCOption() {
         if (data) {
             ::free(data);
             data = 0;
-            len = 0;
         }
     }
     void reset() {
@@ -43,7 +42,6 @@ struct RPCOption { // 最多只能存 20 个字节
         set(opt, length);
     }
     char* data;
-    uint8_t len;
 };
 
 class RPCPackage {
@@ -70,7 +68,7 @@ public:
     SerializationType get_serialization_type() const { return static_cast<SerializationType>(_header.serialization); }
 
     bool has_opt() const { return _header.opt; }
-    std::string get_opt() const { return {_opt.data, _opt.len}; }
+    std::string get_opt() const { return {_opt.data, RPC_OPTIONSIZE}; }
 
     void set_status(Status status) { _header.status = status; }
     Status get_status() const { return static_cast<Status>(_header.status); }

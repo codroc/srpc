@@ -19,13 +19,12 @@ uint16_t RPCHeader::get_magic_number() {
 }
 
 void RPCOption::set(const char* opt, uint8_t length) {
-    if (len > RPC_OPTIONSIZE) {
+    if (length > RPC_OPTIONSIZE) {
         LOG_ERROR << "Set fail: RPC_OPTIONSIZE = " << RPC_OPTIONSIZE << ", but length = " << length << "\n";
         return;
     }
     data = (char*)::malloc(RPC_OPTIONSIZE);
     ::memcpy(data, opt, length);
-    len = length;
 }
 
 RPCPackage::RPCPackage()
@@ -54,10 +53,31 @@ void RPCPackage::set_body(const char* data, int len) {
 }
 
 std::string RPCPackage::to_string() const {
-    return {};
+    std::string header(reinterpret_cast<const char*>(this), sizeof(RPCHeader));
+    std::string opt;
+    if (has_opt()) {
+        opt = std::string(_opt.data, RPC_OPTIONSIZE);
+    }
+    return header + opt + _bytes;
 }
 RPCPackage RPCPackage::from_string(const std::string& str) {
-    return {};
+    RPCPackage package;
+    int header_len = sizeof(RPCHeader);
+    std::string_view sv = str;
+    std::string_view sv_header = sv.substr(0, header_len);
+    sv.remove_prefix(header_len);
+
+    RPCHeader header;
+    ::memcpy(&header, sv_header.data(), sv_header.size());
+    package.set_header(header);
+    if (package.has_opt()) {
+        std::string_view sv_opt = sv.substr(0, RPC_OPTIONSIZE);
+        sv.remove_prefix(RPC_OPTIONSIZE);
+        package.set_option(sv_opt.data(), sv_opt.size());
+    }
+    package.set_body(sv.data(), sv.size());
+    
+    return package;
 }
 
 }
