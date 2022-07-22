@@ -18,11 +18,14 @@ void test_client_codeco() {
     Address addr("127.0.0.1", 8989);
     Greeter::Stub stub(addr);
     SayHelloArgs args;
-    args.name = "codroc";
+    std::string name;
+    std::cout << "please input name:\n";
+    std::cin >> name;
+    args.name = name;
     SayHelloReply reply;
     auto ok = stub.SayHello(&args, &reply);
     if (ok.ok()) {
-        std::cout << "reply: " << reply.reply << ", should same as: " << args.name << std::endl;
+        std::cout << "reply: " << reply.reply << std::endl;
     } else {
         std::cout << "error !\n";
     }

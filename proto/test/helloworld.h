@@ -36,6 +36,9 @@ public:
     bool is_args() const override { return true; }
     bool is_reply() const override { return false; }
 
+    virtual srpc::rpc::BaseMessage::ptr new_instance() override {
+        return std::make_shared<SayHelloArgs>();
+    }
 public:
     std::string name;
 };
@@ -73,6 +76,9 @@ public:
     bool is_args() const override { return false; }
     bool is_reply() const override { return true; }
 
+    virtual srpc::rpc::BaseMessage::ptr new_instance() override {
+        return std::make_shared<SayHelloReply>();
+    }
 public:
     std::string reply;
 };
@@ -92,7 +98,8 @@ public:
 
     class Service : public srpc::rpc::Service {
     public:
-        virtual srpc::rpc::Status SayHello(SayHelloArgs *args, SayHelloReply *reply);
+        Service();
+        virtual srpc::rpc::Status SayHello(const SayHelloArgs *args, SayHelloReply *reply) = 0;
     };
 
     static std::unique_ptr<Stub> NewStub(const Address& addr);

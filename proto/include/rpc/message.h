@@ -11,6 +11,7 @@ public:
     using ptr = std::shared_ptr<BaseMessage>;
     virtual std::string serialize() = 0;
     virtual BaseMessage::ptr deserialize(const std::string& str) = 0;
+    virtual BaseMessage::ptr new_instance() = 0;
 
     virtual bool is_args() const = 0;
     virtual bool is_reply() const = 0;

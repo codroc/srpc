@@ -46,3 +46,14 @@ void Greeter::Stub::set_reply(srpc::rpc::RPCPackage pack, SayHelloReply* reply) 
     std::string body = pack.get_body();
     *reply = reply->deserializeToSayHelloReply(body);
 }
+
+Greeter::Service::Service() {
+    srpc::rpc::Service::add_method(new srpc::rpc::RPCServiceMethod(
+                srpc::rpc::RPCMethod("Greeter", "SayHello", "SayHelloArgs", "SayHelloReply"),
+                new srpc::rpc::RPCMethodHandler<Greeter::Service, SayHelloArgs, SayHelloReply,
+                srpc::rpc::BaseMessage, srpc::rpc::BaseMessage>(
+                    [](Greeter::Service* service,
+                       const SayHelloArgs* args,
+                       SayHelloReply* reply) {
+                    return service->SayHello(args, reply); }, this)));
+}

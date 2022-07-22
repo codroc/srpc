@@ -87,6 +87,9 @@ public:
     void set_body(const char* data, int len);
     std::string get_body() const { return _bytes; }
 
+    void set_arg_or_reply();
+    std::string get_arg_or_reply() const { return _arg_or_reply; }
+
     void set_checksum() {}
     uint16_t get_checksum() const { return _header.checksum; }
 
@@ -97,6 +100,7 @@ private:
     RPCOption _opt;
 
     std::string _bytes; // service name, method name, args/reply
+    std::string _arg_or_reply;
 };
 
 struct RPCMethod {

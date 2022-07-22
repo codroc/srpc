@@ -1,5 +1,6 @@
 #include "rpc.h"
 #include "flog.h"
+#include "serialize.h"
 
 namespace srpc {
 namespace rpc {
@@ -50,6 +51,19 @@ void RPCPackage::set_option(const char *opt, uint8_t len) {
 void RPCPackage::set_body(const char* data, int len) {
     _bytes = std::string(data, len);
     _header.data_length = _bytes.size();
+
+    set_arg_or_reply();
+}
+
+void RPCPackage::set_arg_or_reply() {
+    std::string tmp = _bytes;
+    Serialize de(Serialize::DESERIALIZER, tmp);
+    de.readString();
+    de.readString();
+    de.readString();
+    de.readString();
+    _arg_or_reply = de.peek();
+    de.reset();
 }
 
 std::string RPCPackage::to_string() const {

@@ -26,6 +26,9 @@ public:
     // deserializer
     void reset();
     void reset(const std::string& bytearray);
+    std::string peek() {
+        return {_buf + _readed, _len - _readed};
+    }
 
     // write
     // 序列化从 p 开始的 4 个字节到 
