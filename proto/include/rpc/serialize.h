@@ -4,6 +4,9 @@
 #include <memory>
 #include <string>
 
+namespace srpc {
+namespace rpc {
+
 // 模仿 google protobuf 的序列化规则
 // Tag [Length] Value
 // TLV: string
@@ -125,5 +128,8 @@ private:
     size_t _len{0};
     uint32_t _readed{0}; // 对于 deserializer 来说已经读了的字节数
 };
+
+}
+}
 
 #endif

@@ -1,11 +1,14 @@
 #ifndef HELLOWORLD_H
 #define HELLOWORLD_H
 #include "address.h"
-#include "rpc.h"
-#include "message.h"
-#include "serialize.h"
-#include "rpc_status.h"
-#include "service.h"
+#include "rpc/rpc.h"
+#include "rpc/codeco.h"
+#include "rpc/method_handler.h"
+#include "rpc/message_register.h"
+#include "rpc/message.h"
+#include "rpc/serialize.h"
+#include "rpc/rpc_status.h"
+#include "rpc/service.h"
 
 class SayHelloArgs : public srpc::rpc::BaseMessage {
 public:
@@ -17,12 +20,12 @@ public:
     ~SayHelloArgs() = default;
 
     std::string serializeToString() {
-        Serialize se(Serialize::SERIALIZER);
+        srpc::rpc::Serialize se(srpc::rpc::Serialize::SERIALIZER);
         se.writeString(name);
         return se.toString();
     }
     static SayHelloArgs deserializeToSayHelloArgs(const std::string& str) {
-        Serialize de{Serialize::DESERIALIZER, str};
+        srpc::rpc::Serialize de{srpc::rpc::Serialize::DESERIALIZER, str};
         return {de.readString()};
     }
 
@@ -53,12 +56,12 @@ public:
     ~SayHelloReply() = default;
 
     std::string serializeToString() {
-        Serialize se(Serialize::SERIALIZER);
+        srpc::rpc::Serialize se(srpc::rpc::Serialize::SERIALIZER);
         se.writeString(reply);
         return se.toString();
     }
     static SayHelloReply deserializeToSayHelloReply(const std::string& rpc_body) {
-        Serialize de{Serialize::DESERIALIZER, rpc_body};
+        srpc::rpc::Serialize de{srpc::rpc::Serialize::DESERIALIZER, rpc_body};
         std::string service_name = de.readString();
         std::string method_name = de.readString();
         std::string args_type = de.readString();

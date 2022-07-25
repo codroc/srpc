@@ -1,8 +1,8 @@
 #ifndef SRPC_PROTO_RPC_SERVICE_H
 #define SRPC_PROTO_RPC_SERVICE_H
 
-#include "rpc.h"
-#include "handler.h"
+#include "rpc/rpc.h"
+#include "rpc/method_handler.h"
 #include <map>
 #include <string>
 #include <memory>

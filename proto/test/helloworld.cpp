@@ -1,7 +1,4 @@
 #include "helloworld.h"
-#include "message.h"
-#include "register.h"
-#include "codeco.h"
 #include "socket.h"
 #include "flog.h"
 
@@ -9,8 +6,8 @@
 //     "Greeter.SayHello"
 // };
 
-TYPE_REGISTER(SayHelloArgs);
-TYPE_REGISTER(SayHelloReply);
+MESSAGE_REGISTER(SayHelloArgs);
+MESSAGE_REGISTER(SayHelloReply);
 
 Greeter::Stub::Stub(const Address& addr)
     : _addr(addr)

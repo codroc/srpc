@@ -1,4 +1,4 @@
-#include "message.h"
+#include "rpc/message.h"
 
 namespace srpc {
 namespace rpc {

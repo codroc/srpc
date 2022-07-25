@@ -1,8 +1,8 @@
-#ifndef SRPC_PROTO_RPC_HANDLER_H
-#define SRPC_PROTO_RPC_HANDLER_H
+#ifndef SRPC_PROTO_RPC_METHOD_HANDLER_H
+#define SRPC_PROTO_RPC_METHOD_HANDLER_H
 
-#include "rpc.h"
-#include "rpc_status.h"
+#include "rpc/rpc.h"
+#include "rpc/rpc_status.h"
 #include <functional>
 namespace srpc {
 namespace rpc {

@@ -1,8 +1,8 @@
 #ifndef SRPC_PROTO_RPC_CODECO_H
 #define SRPC_PROTO_RPC_CODECO_H
 
-#include "rpc.h"
-#include "message.h"
+#include "rpc/rpc.h"
+#include "rpc/message.h"
 
 namespace srpc {
 namespace rpc {

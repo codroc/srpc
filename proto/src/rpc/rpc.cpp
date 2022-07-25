@@ -1,6 +1,6 @@
-#include "rpc.h"
+#include "rpc/rpc.h"
+#include "rpc/serialize.h"
 #include "flog.h"
-#include "serialize.h"
 
 namespace srpc {
 namespace rpc {

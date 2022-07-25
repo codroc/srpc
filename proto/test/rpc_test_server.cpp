@@ -1,8 +1,9 @@
 #include "flog.h"
 #include "eventloop.h"
 #include "tcp_server.h"
+
 #include "helloworld.h"
-#include "service.h"
+
 #include <functional>
 #include <iostream>
 
@@ -55,7 +56,7 @@ private:
     srpc::rpc::RPCMethod get_method(const Buffer& buffer) {
         std::string bytes = buffer.peek_all();
         skip_head_and_opt(bytes);
-        Serialize de(Serialize::DESERIALIZER, bytes);
+        srpc::rpc::Serialize de(srpc::rpc::Serialize::DESERIALIZER, bytes);
         std::string service = de.readString();
         std::string method = de.readString();
         std::string args_type = de.readString();

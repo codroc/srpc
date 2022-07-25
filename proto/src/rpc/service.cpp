@@ -1,6 +1,6 @@
-#include "service.h"
-#include "handler.h"
-#include "message.h"
+#include "rpc/service.h"
+#include "rpc/method_handler.h"
+#include "rpc/message.h"
 
 namespace srpc {
 namespace rpc {

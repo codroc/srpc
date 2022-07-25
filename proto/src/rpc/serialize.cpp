@@ -1,9 +1,12 @@
-#include "serialize.h"
+#include "rpc/serialize.h"
 #include <assert.h>
 #include <byteswap.h>
 #include <fstream>
 
 #include "flog.h"
+
+namespace srpc {
+namespace rpc {
 
 bool isLittleEndian();
 static bool g_isLittleEndian = isLittleEndian();
@@ -407,4 +410,7 @@ std::string Serialize::fromFile(const std::string& filepath) {
     infile >> ret;
     infile.close();
     return ret;
+}
+
+}
 }

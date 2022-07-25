@@ -2,7 +2,7 @@
 #ifndef SRPC_PROTO_RPC_H
 #define SRPC_PROTO_RPC_H
 
-#include "serialize.h"
+#include "rpc/serialize.h"
 #include <string>
 
 #define RPC_OPTIONSIZE 20
