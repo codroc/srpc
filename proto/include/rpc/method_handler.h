@@ -17,7 +17,7 @@ public:
             : rpc_method(rm), arg(parg)
         {}
         ~HandlerParameter() {}
-        void* const arg;
+        void* const arg; // args type
         RPCMethod rpc_method;
     };
 
@@ -33,14 +33,15 @@ public:
             std::function<Status(ServiceType*, const ArgType*, ReplyType*)>
             func, ServiceType* service)
         : _func(func), _service(service) {}
-    RPCPackage run_handler(const HandlerParameter& param) override {
+    virtual RPCPackage run_handler(const HandlerParameter& param) override {
         ReplyType reply;
         Status status = _func(_service, static_cast<ArgType*>(param.arg), &reply);
 
         RPCPackage pack(RPCPackage::RPCResponse, RPCPackage::Local);
         if (status.ok()) {
-            pack.set_body(param.rpc_method.serializeToString() + reply.serialize());
             pack.set_status(RPCPackage::Ok);
+            pack.set_rpc_method(param.rpc_method);
+            pack.set_message(std::make_shared<ReplyType>(reply));
         } else {
             pack.set_status(RPCPackage::Error);
         }

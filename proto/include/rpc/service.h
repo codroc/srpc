@@ -23,7 +23,7 @@ private:
 };
 class Service {
 public:
-    RPCPackage process(const RPCMethod& rpc_method, const RPCPackage& pack);
+    RPCPackage process(const RPCPackage& pack);
     void add_method(RPCServiceMethod* service_method);
 private:
     std::map<std::string, std::unique_ptr<RPCServiceMethod>> _methods;

@@ -29,7 +29,7 @@ public:
     // deserializer
     void reset();
     void reset(const std::string& bytearray);
-    std::string peek() {
+    std::string peek_all() {
         return {_buf + _readed, _len - _readed};
     }
 

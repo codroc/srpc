@@ -8,5 +8,9 @@ std::map<std::string, srpc::rpc::BaseMessage::ptr>& GetInstanceMap() {
     return g_instance_map;
 }
 
+BaseMessage::ptr MessageFactory(const std::string& type_name) {
+    return GetInstanceMap()[type_name]->new_instance();
+}
+
 }
 }

@@ -29,10 +29,10 @@ public:
         return {de.readString()};
     }
 
-    std::string serialize() override {
+    virtual std::string to_string() override {
         return serializeToString();
     }
-    srpc::rpc::BaseMessage::ptr deserialize(const std::string& str) override {
+    virtual srpc::rpc::BaseMessage::ptr from_string(const std::string& str) override {
         return std::make_shared<SayHelloArgs>(std::move(deserializeToSayHelloArgs(str)));
     }
 
@@ -62,17 +62,13 @@ public:
     }
     static SayHelloReply deserializeToSayHelloReply(const std::string& rpc_body) {
         srpc::rpc::Serialize de{srpc::rpc::Serialize::DESERIALIZER, rpc_body};
-        std::string service_name = de.readString();
-        std::string method_name = de.readString();
-        std::string args_type = de.readString();
-        std::string reply_type = de.readString();
         return {de.readString()};
     }
 
-    std::string serialize() {
+    virtual std::string to_string() override {
         return serializeToString();
     }
-    srpc::rpc::BaseMessage::ptr deserialize(const std::string& rpc_body) override {
+    virtual srpc::rpc::BaseMessage::ptr from_string(const std::string& rpc_body) override {
         return std::make_shared<SayHelloReply>(std::move(deserializeToSayHelloReply(rpc_body)));
     }
 
@@ -93,8 +89,6 @@ public:
         Stub(const Address& addr);
         srpc::rpc::Status SayHello(SayHelloArgs *args, SayHelloReply *reply);
     private:
-        void set_reply(srpc::rpc::RPCPackage pack, SayHelloReply* reply);
-    private:
         Address _addr;
         srpc::rpc::RPCMethod _rpcmethod_SayHello;
     };
@@ -104,6 +98,9 @@ public:
         Service();
         virtual srpc::rpc::Status SayHello(const SayHelloArgs *args, SayHelloReply *reply) = 0;
     };
+
+    // TODO: 放一个序列化基类指针，然后具体的序列化方法就可以通过构造函数传入
+    // Serializer* _se;
 
     static std::unique_ptr<Stub> NewStub(const Address& addr);
 private:

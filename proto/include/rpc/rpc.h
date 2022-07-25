@@ -3,12 +3,50 @@
 #define SRPC_PROTO_RPC_H
 
 #include "rpc/serialize.h"
+#include "rpc/message.h"
 #include <string>
+#include <iostream>
 
 #define RPC_OPTIONSIZE 20
 
 namespace srpc {
 namespace rpc {
+
+struct RPCMethod {
+    RPCMethod()
+        : valid(false), service_name(), method_name(), args_type(), reply_type() {}
+    RPCMethod(const std::string& s, const std::string& m, const std::string& args, const std::string& reply)
+        : valid(true), service_name(s), method_name(m), args_type(args), reply_type(reply) {}
+
+    bool valid;
+    std::string service_name;
+    std::string method_name;
+    std::string args_type;
+    std::string reply_type;
+
+    std::string to_string() const {
+        Serialize se(Serialize::SERIALIZER);
+        se.writeString(service_name);
+        se.writeString(method_name);
+        se.writeString(args_type);
+        se.writeString(reply_type);
+        return se.toString();
+    }
+
+    static RPCMethod from_string(const std::string& str) {
+        Serialize de(Serialize::DESERIALIZER, str);
+        return {
+            de.readString(),
+            de.readString(),
+            de.readString(),
+            de.readString()
+        };
+    }
+
+    static RPCMethod from_string(std::string_view sv) {
+        return RPCMethod::from_string(std::string(sv.data(), sv.size()));
+    }
+};
 
 struct RPCHeader { // 总共 8 个字节
     RPCHeader();
@@ -73,69 +111,46 @@ public:
     void set_status(Status status) { _header.status = status; }
     Status get_status() const { return static_cast<Status>(_header.status); }
 
-    void set_option(const char *opt, uint8_t len);
-    void set_option(const std::string& opt) { set_option(opt.data(), opt.size()); }
-
     void set_header(RPCHeader header) { _header = header; }
     RPCHeader get_header() const { return _header; }
+
+    void set_option(const char *opt, uint8_t len);
+    void set_option(const std::string& opt) { set_option(opt.data(), opt.size()); }
 
     void set_request() { _header.type = RPCRequest; }
     void set_response() { _header.type = RPCResponse; }
     void set_heartbeat() { _header.type = HeartBeat; }
 
-    void set_body(const std::string& bytes) { set_body(bytes.data(), bytes.size()); }
-    void set_body(const char* data, int len);
-    std::string get_body() const { return _bytes; }
-
-    void set_arg_or_reply();
-    std::string get_arg_or_reply() const { return _arg_or_reply; }
+    bool is_request() const { return _header.type == RPCRequest; }
+    bool is_response() const { return _header.type == RPCResponse; }
+    bool is_heartbeat() const { return _header.type == HeartBeat; }
 
     void set_checksum() {}
     uint16_t get_checksum() const { return _header.checksum; }
 
+    void set_rpc_method(const RPCMethod& rpc_method) { _rpc_method = rpc_method; }
+    RPCMethod get_rpc_method() const { return _rpc_method; }
+
+    // RPCPackage has ownership of BaseMessage
+    void set_message(BaseMessage::ptr msg) { _msg = msg; }
+    void set_message_from_string_with_rpc_method(const std::string& rpc_method_then_message);
+    void set_message_from_string_with_rpc_method(std::string_view rpc_method_then_message);
+    BaseMessage* get_message() const { return _msg.get(); }
+
+    // serialize
     std::string to_string() const;
     static RPCPackage from_string(const std::string& str);
 private:
     RPCHeader _header;
     RPCOption _opt;
 
-    std::string _bytes; // service name, method name, args/reply
-    std::string _arg_or_reply;
-};
-
-struct RPCMethod {
-    RPCMethod()
-        : valid(false), service_name(), method_name(), args_type(), reply_type() {}
-    RPCMethod(const std::string& s, const std::string& m, const std::string& args, const std::string& reply)
-        : valid(true), service_name(s), method_name(m), args_type(args), reply_type(reply) {}
-
-    bool valid;
-    std::string service_name;
-    std::string method_name;
-    std::string args_type;
-    std::string reply_type;
-
-    std::string serializeToString() const {
-        Serialize se(Serialize::SERIALIZER);
-        se.writeString(service_name);
-        se.writeString(method_name);
-        se.writeString(args_type);
-        se.writeString(reply_type);
-        return se.toString();
-    }
-
-    static RPCMethod deserializeToRPCMethod(const std::string& str) {
-        Serialize de(Serialize::DESERIALIZER, str);
-        return {
-            de.readString(),
-            de.readString(),
-            de.readString(),
-            de.readString()
-        };
-    }
+    RPCMethod _rpc_method;
+    BaseMessage::ptr _msg;
 };
 
 } // rpc
 } // srpc
+
+std::ostream& operator<<(std::ostream& os, const srpc::rpc::RPCMethod& rpc_method);
 
 #endif

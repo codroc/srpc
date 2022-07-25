@@ -5,13 +5,11 @@
 namespace srpc {
 namespace rpc {
 
-RPCPackage Service::process(const RPCMethod& rpc_method, const RPCPackage& pack) {
+RPCPackage Service::process(const RPCPackage& pack) {
+    auto rpc_method = pack.get_rpc_method();
     auto handler = _methods[rpc_method.method_name]->handler();
 
-    std::string str_arg = pack.get_arg_or_reply();
-    auto arg = GetInstanceMap()[rpc_method.args_type].get()->new_instance()->deserialize(str_arg);
-
-    return handler->run_handler(MethodHandler::HandlerParameter(rpc_method, arg.get()));
+    return handler->run_handler(MethodHandler::HandlerParameter(rpc_method, pack.get_message()));
 }
 void Service::add_method(RPCServiceMethod* service_method) {
     std::unique_ptr<RPCServiceMethod> up(service_method);

@@ -1,6 +1,7 @@
 #include "helloworld.h"
 #include "socket.h"
 #include "flog.h"
+#include <memory>
 
 // static const char* Greeter_method_name[] = {
 //     "Greeter.SayHello"
@@ -17,10 +18,11 @@ Greeter::Stub::Stub(const Address& addr)
 // 这个是同步调用
 srpc::rpc::Status Greeter::Stub::SayHello(SayHelloArgs *args, SayHelloReply *reply) {
     srpc::rpc::Codeco codeco;
-    auto package = codeco.encoder(_rpcmethod_SayHello, args, srpc::rpc::RPCPackage::Local);
+    auto local_args = std::make_shared<SayHelloArgs>(*args); // copy construct
+    auto msg = codeco.encoder(_rpcmethod_SayHello, local_args, srpc::rpc::RPCPackage::Local);
+
     TCPSocket sock;
     sock.connect(_addr);
-    std::string msg = package.to_string();
     ssize_t written = sock.send(msg);
     // fix me:
     if (written != msg.size()) {
@@ -35,13 +37,8 @@ srpc::rpc::Status Greeter::Stub::SayHello(SayHelloArgs *args, SayHelloReply *rep
     }
     
     auto response_pack = srpc::rpc::RPCPackage::from_string(ret);
-    set_reply(response_pack, reply);
+    *reply = reply->deserializeToSayHelloReply(response_pack.get_message()->to_string());
     return {};
-}
-
-void Greeter::Stub::set_reply(srpc::rpc::RPCPackage pack, SayHelloReply* reply) {
-    std::string body = pack.get_body();
-    *reply = reply->deserializeToSayHelloReply(body);
 }
 
 Greeter::Service::Service() {
