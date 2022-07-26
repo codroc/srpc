@@ -103,8 +103,6 @@ public:
     // Serializer* _se;
 
     static std::unique_ptr<Stub> NewStub(const Address& addr);
-private:
-    std::string _service_name;
 };
 
 #endif

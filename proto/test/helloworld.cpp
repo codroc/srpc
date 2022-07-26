@@ -3,12 +3,7 @@
 #include "flog.h"
 #include <memory>
 
-// static const char* Greeter_method_name[] = {
-//     "Greeter.SayHello"
-// };
-
-MESSAGE_REGISTER(SayHelloArgs);
-MESSAGE_REGISTER(SayHelloReply);
+MESSAGE_REGISTER(SayHelloArgs); MESSAGE_REGISTER(SayHelloReply);
 
 Greeter::Stub::Stub(const Address& addr)
     : _addr(addr)
