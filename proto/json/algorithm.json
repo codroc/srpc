@@ -1,0 +1,47 @@
+{
+    "Message": [
+        {
+            "Name": "AddArgs",
+            "Param": {
+                "int32_t": "a",
+                "int32_t": "b"
+            }
+        },
+        {
+            "Name": "AddReply",
+            "Param": {
+                "int32_t": "res"
+            }
+        },
+        {
+            "Name": "ModArgs",
+            "Param": {
+                "int32_t": "a",
+                "int32_t": "b"
+            }
+        },
+        {
+            "Name": "ModReply",
+            "Param": {
+                "int32_t": "res"
+            }
+        }
+    ],
+    "Service": [
+        {
+            "Name": "Cal",
+            "Method": [
+                {
+                    "Name": "Add",
+                    "ArgsType": "AddArgs",
+                    "ReplyType": "AddReply"
+                },
+                {
+                    "Name": "Mod",
+                    "ArgsType": "ModArgs",
+                    "ReplyType": "ModReply"
+                }
+            ]
+        }
+    ]
+}

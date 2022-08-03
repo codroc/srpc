@@ -40,3 +40,11 @@ target_include_directories(stub_generator_test PUBLIC ${PROJECT_SOURCE_DIR}/incl
 # add_executable(rpc_sayhi_test_server test/rpc_sayhi_test_server.cpp test/sayhi.srpc.cpp src/rpc/rpc.cpp src/rpc/serialize.cpp src/rpc/message.cpp src/rpc/codeco.cpp src/rpc/service.cpp src/rpc/rpc_server.cpp)
 # target_link_libraries(rpc_sayhi_test_server  PUBLIC cpputils net ssl crypto pthread)
 # target_include_directories(rpc_sayhi_test_server PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(rpc_algorithm_test test/rpc_algorithm_test.cpp test/algorithm.srpc.cpp src/rpc/rpc.cpp src/rpc/serialize.cpp src/rpc/message.cpp src/rpc/codeco.cpp src/rpc/service.cpp src/rpc/rpc_server.cpp)
+target_link_libraries(rpc_algorithm_test PUBLIC cpputils net ssl crypto pthread)
+target_include_directories(rpc_algorithm_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(rpc_algorithm_test_server test/rpc_algorithm_test_server.cpp test/algorithm.srpc.cpp src/rpc/rpc.cpp src/rpc/serialize.cpp src/rpc/message.cpp src/rpc/codeco.cpp src/rpc/service.cpp src/rpc/rpc_server.cpp)
+target_link_libraries(rpc_algorithm_test_server PUBLIC cpputils net ssl crypto pthread)
+target_include_directories(rpc_algorithm_test_server PUBLIC ${PROJECT_SOURCE_DIR}/include)
