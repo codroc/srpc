@@ -11,15 +11,15 @@ bool Codeco::has_bit_error(const RPCPackage&) {
     return false;
 }
 
-std::string Codeco::encoder(const RPCMethod& method, BaseMessage::ptr msg, RPCPackage::SerializationType type) {
+std::string Codeco::encoder(const RPCMethod& method, BaseMessage::ptr msg, RPCPackage::SerializationType type, bool is_args) {
     RPCPackage package;
     package.set_serialization_type(type);
     if (!msg) {
         package.set_heartbeat();
         return package.to_string(); // 心跳包不填 checksum 也可以
-    } else if (msg->is_args()) {
+    } else if (is_args) {
         package.set_request();
-    } else if (msg->is_reply()) {
+    } else {
         package.set_response();
     }
 

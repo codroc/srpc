@@ -14,7 +14,8 @@ Greeter::Stub::Stub(const Address& addr)
 srpc::rpc::Status Greeter::Stub::SayHello(SayHelloArgs *args, SayHelloReply *reply) {
     srpc::rpc::Codeco codeco;
     auto local_args = std::make_shared<SayHelloArgs>(*args); // copy construct
-    auto msg = codeco.encoder(_rpcmethod_SayHello, local_args, srpc::rpc::RPCPackage::Local);
+    bool is_args = true;
+    auto msg = codeco.encoder(_rpcmethod_SayHello, local_args, srpc::rpc::RPCPackage::Local, is_args);
 
     TCPSocket sock;
     sock.connect(_addr);

@@ -36,9 +36,6 @@ public:
         return std::make_shared<SayHelloArgs>(std::move(deserializeToSayHelloArgs(str)));
     }
 
-    bool is_args() const override { return true; }
-    bool is_reply() const override { return false; }
-
     virtual srpc::rpc::BaseMessage::ptr new_instance() override {
         return std::make_shared<SayHelloArgs>();
     }
@@ -62,7 +59,9 @@ public:
     }
     static SayHelloReply deserializeToSayHelloReply(const std::string& rpc_body) {
         srpc::rpc::Serialize de{srpc::rpc::Serialize::DESERIALIZER, rpc_body};
-        return {de.readString()};
+        return {
+            de.readString(),
+        };
     }
 
     virtual std::string to_string() override {
@@ -71,9 +70,6 @@ public:
     virtual srpc::rpc::BaseMessage::ptr from_string(const std::string& rpc_body) override {
         return std::make_shared<SayHelloReply>(std::move(deserializeToSayHelloReply(rpc_body)));
     }
-
-    bool is_args() const override { return false; }
-    bool is_reply() const override { return true; }
 
     virtual srpc::rpc::BaseMessage::ptr new_instance() override {
         return std::make_shared<SayHelloReply>();

@@ -12,9 +12,6 @@ public:
     virtual std::string to_string() = 0;
     virtual BaseMessage::ptr from_string(const std::string& str) = 0;
     virtual BaseMessage::ptr new_instance() = 0;
-
-    virtual bool is_args() const = 0;
-    virtual bool is_reply() const = 0;
 };
 
 std::map<std::string, BaseMessage::ptr>& GetInstanceMap();
