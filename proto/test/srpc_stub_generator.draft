@@ -1,0 +1,180 @@
+// greeter.srpc.cpp
+// TODO: 要知道所有的消息类型
+// 可能有多个消息类型需要注册
+MESSAGE_REGISTER([MessageName]);
+MESSAGE_REGISTER([MessageName]);
+
+// TODO: Service
+// 可能有多个 Service
+[ServiceName]::Stub::Stub(const Address& addr)
+    : _addr(addr)
+    // TODO: 要知道所有的 MethodName, ServiceName, ArgsTypeName, ReplyTypeName
+    // 可能有多个方法
+    , _rpcmethod_[MethodName]("[ServiceName]", "[MethodName]", "[ArgsTypeName]", "[ReplyTypeName]")
+{}
+
+// TODO: Client Stub
+// 可能有多个 Method
+srpc::rpc::Status [ServiceName]::Stub::[MethodName]([ArgsTypeName] *args, [ReplyTypeName] *reply) {
+    srpc::rpc::Codeco codeco;
+    auto local_args = std::make_shared<[ArgsTypeName]>(*args); // copy construct
+    auto msg = codeco.encoder(_rpcmethod_[MethodName], local_args, srpc::rpc::RPCPackage::Local);
+
+    TCPSocket sock;
+    sock.connect(_addr);
+    ssize_t written = sock.send(msg);
+    // fix me:
+    if (written != msg.size()) {
+        LOG_WARN << "Not implement: out bound buffer is not enough!\n";
+        exit(1);
+    }
+    std::string readed;
+    std::string ret;
+    while (sock.recv(readed) != 0) {
+        ret += readed;
+        readed.clear();
+    }
+    
+    auto response_pack = srpc::rpc::RPCPackage::from_string(ret);
+    *reply = reply->deserializeTo[ReplyTypeName](response_pack.get_message()->to_string());
+    return {};
+}
+
+// TODO: Server Stub
+// 可能有多个 Method
+[ServiceName]::Service::Service() {
+    srpc::rpc::Service::add_method(new srpc::rpc::RPCServiceMethod(
+                srpc::rpc::RPCMethod("[ServiceName]", "[MethodName]", "[ArgsTypeName]", "[ReplyTypeName]"),
+                new srpc::rpc::RPCMethodHandler<[ServiceName]::Service, [ArgsTypeName], [ReplyTypeName],
+                srpc::rpc::BaseMessage, srpc::rpc::BaseMessage>(
+                    []([ServiceName]::Service* service,
+                       const [ArgsTypeName]* args,
+                       [ReplyTypeName]* reply) {
+                    return service->[MethodName](args, reply); }, this)));
+}
+
+// greeter.srpc.h
+#ifndef SRPC_[Filename]_H
+#define SRPC_[Filename]_H
+
+class [ArgsTypeName] : public srpc::rpc::BaseMessage {
+public:
+    using ptr = std::shared_ptr<[ArgsTypeName]>;
+
+    [ArgsTypeName]() = default;
+    [ArgsTypeName](const std::string& name)
+        // TODO: 构造函数里的参数要根据 data member 来设置
+        : name(name) {}
+    ~[ArgsTypeName]() = default;
+
+    std::string serializeToString() {
+        srpc::rpc::Serialize se(srpc::rpc::Serialize::SERIALIZER);
+
+        // TODO: 这里要根据类型中的 param 进行序列化，所以我得直到有哪些参数，以及参数的类型
+        se.writeString(name);
+
+        return se.toString();
+    }
+    static [ArgsTypeName] deserializeTo[ArgsTypeName](const std::string& str) {
+        srpc::rpc::Serialize de{srpc::rpc::Serialize::DESERIALIZER, str};
+        return {
+            
+            // TODO: 这里要根据类型中的 param 进行反序列化，所以我得直到有哪些参数，以及参数的类型
+            de.readString()
+
+        };
+    }
+
+    virtual std::string to_string() override {
+        return serializeToString();
+    }
+    virtual srpc::rpc::BaseMessage::ptr from_string(const std::string& str) override {
+        return std::make_shared<[ArgsTypeName]>(std::move(deserializeTo[ArgsTypeName](str)));
+    }
+
+    virtual srpc::rpc::BaseMessage::ptr new_instance() override {
+        return std::make_shared<[ArgsTypeName]>();
+    }
+public:
+    // TODO: 这里要根据类型中的 param 进行设置，所以我得直到有哪些参数，以及参数的类型
+    // 可能有多个参数
+    [TypeName] [ParamName];
+};
+
+class [ReplyTypeName] : public srpc::rpc::BaseMessage {
+public:
+    using ptr = std::shared_ptr<[ReplyTypeName]>;
+
+    [ReplyTypeName]() = default;
+    [ReplyTypeName](const std::string& reply)
+        : reply(reply) {}
+    ~[ReplyTypeName]() = default;
+
+    std::string serializeToString() {
+        srpc::rpc::Serialize se(srpc::rpc::Serialize::SERIALIZER);
+
+        // TODO: 这里要根据类型中的 param 进行序列化，所以我得直到有哪些参数，以及参数的类型
+        se.writeString(reply);
+
+        return se.toString();
+    }
+    static [ReplyTypeName] deserializeTo[ReplyTypeName](const std::string& rpc_body) {
+        srpc::rpc::Serialize de{srpc::rpc::Serialize::DESERIALIZER, rpc_body};
+        return {
+
+            // TODO: 这里要根据类型中的 param 进行反序列化，所以我得直到有哪些参数，以及参数的类型
+            de.readString()
+
+        };
+    }
+
+    virtual std::string to_string() override {
+        return serializeToString();
+    }
+    virtual srpc::rpc::BaseMessage::ptr from_string(const std::string& rpc_body) override {
+        return std::make_shared<[ReplyTypeName]>(std::move(deserializeTo[ReplyTypeName](rpc_body)));
+    }
+
+    virtual srpc::rpc::BaseMessage::ptr new_instance() override {
+        return std::make_shared<[ReplyTypeName]>();
+    }
+public:
+    // TODO: 这里要根据类型中的 param 进行设置，所以我得直到有哪些参数，以及参数的类型
+    // 可能有多个参数
+    [TypeName] [ParamName];
+};
+
+class [ServiceName] {
+public:
+    class Stub {
+    public:
+        Stub(const Address& addr);
+        // TODO: 这里我的知道所有的方法，以及传入方法的参数类型和返回值类型
+        // 可能有多个方法
+        // srpc::rpc::Status [MethodName]([ArgsTypeName] *args, [ReplyTypeName] *reply);
+        [ClientStubMemberFunctions]
+    private:
+        Address _addr;
+
+        // TODO: 可能有多个方法
+        // srpc::rpc::RPCMethod _rpcmethod_[MethodName];
+        [DataMembers]
+    };
+
+    class Service : public srpc::rpc::Service {
+    public:
+        Service();
+
+        // TODO: 这里我的知道所有的方法，以及传入方法的参数类型和返回值类型
+        // 可能有多个方法
+        // virtual srpc::rpc::Status [MethodName](const [ArgsTypeName] *args, [ReplyTypeName] *reply) = 0;
+        [ServerStubMemberFunctions]
+    };
+
+    // TODO: 放一个序列化基类指针，然后具体的序列化方法就可以通过构造函数传入
+    // Serializer* _se;
+
+    static std::unique_ptr<Stub> NewStub(const Address& addr);
+};
+
+#endif

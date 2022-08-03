@@ -1,0 +1,28 @@
+{
+    "Message": [
+        {
+            "Name": "SayHiArgs",
+            "Param": {
+                "std::string": "name"
+            }
+        },
+        {
+            "Name": "SayHiReply",
+            "Param": {
+                "std::string": "reply"
+            }
+        }
+    ],
+    "Service": [
+        {
+            "Name": "Hi",
+            "Method": [
+                {
+                    "Name": "SayHi",
+                    "ArgsType": "SayHiArgs",
+                    "ReplyType": "SayHiReply"
+                }
+            ]
+        }
+    ]
+}
