@@ -5,9 +5,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(GLOB sources src/*.cpp src/rpc/*.cpp)
+file(GLOB BASIC_HEADERS include/*.h)
+file(GLOB RPC_HEADERS include/rpc/*.h)
 add_library(proto STATIC ${sources})
 target_link_libraries(proto PUBLIC net ssl crypto)
 target_include_directories(proto PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+install (TARGETS proto DESTINATION /usr/local/bin)
+install (FILES ${BASIC_HEADERS} DESTINATION /usr/local/include/srpc/proto)
+install (FILES ${RPC_HEADERS} DESTINATION /usr/local/include/srpc/proto/rpc)
 
 # add_executable(http_test test/gtest_main.cpp test/http_test.cpp src/http.cpp)
 # target_link_libraries(http_test PUBLIC gtest cpputils pthread)
