@@ -8,7 +8,7 @@
 #include <memory>
 
 int main() {
-    Address addr("127.0.0.1", 6677);
+    Address addr("124.70.82.205", 12345);
     Hi::Stub stub(addr);
     SayHiArgs args;
     std::string name;

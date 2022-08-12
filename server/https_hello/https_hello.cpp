@@ -68,7 +68,7 @@ bool CacheFileData(const std::string& file) {
 }
 
 int main(int argc, char** argv) {
-    Logger::setLevel(Logger::LEVEL::WARN);
+    Logger::getInstance()->setLevel(Logger::LEVEL::WARN);
     if (argc < 3) {
         std::cout << "usage: ./https_hello [http|https] config.yaml\n";
         return 0;

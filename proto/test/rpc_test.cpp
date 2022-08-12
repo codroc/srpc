@@ -2,6 +2,8 @@
 
 #include "address.h"
 
+#include "flog.h"
+
 #include <iostream>
 #include <string>
 #include <map>
@@ -13,6 +15,7 @@ void test_chrone() {
 }
 
 void test_client_codeco() {
+    LOG_INFO << "test_client_codeco" << "\n";
     Address addr("127.0.0.1", 8989);
     Greeter::Stub stub(addr);
     SayHelloArgs args;

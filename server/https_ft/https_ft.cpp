@@ -116,7 +116,7 @@ void SigChildHandler(int signum) {
 }
 
 void init() {
-    Logger::setLevel(Logger::LEVEL::WARN);
+    Logger::getInstance()->setLevel(Logger::LEVEL::WARN);
     Logger::SetBufferLevel(Logger::kLineBuffer);
     std::signal(SIGCHLD, SigChildHandler);
 

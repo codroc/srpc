@@ -16,7 +16,7 @@ int main() {
     Logger::SetBufferLevel(Logger::kLineBuffer);
 
     EventLoop loop;
-    Address addr("127.0.0.1", 6677);
+    Address addr("0.0.0.0", 12345);
     SocketOptions opt;
     opt.reuseaddr = true;
     srpc::rpc::RPCServer gs(&loop, addr, opt);
