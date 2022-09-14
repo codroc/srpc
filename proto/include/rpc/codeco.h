@@ -7,8 +7,9 @@
 namespace srpc {
 namespace rpc {
 
-// serialization type: Local
-// 为了从 RPCPackage 中获取 RPCMethod 以及 args/reply
+// Codeco 的工作内容：
+// 做 网络数据 和 业务消息 之间的转换
+// decoder 包括了分包，包合法性检测
 class Codeco {
 public:
     // RPCPackage encoder(const RPCMethod& method, BaseMessage* msg, RPCPackage::SerializationType type);

@@ -56,3 +56,7 @@ target_include_directories(timer_resolution_test PUBLIC ${PROJECT_SOURCE_DIR}/in
 add_executable(timer_multithread_test test/timer_multithread_test.cpp)
 target_link_libraries(timer_multithread_test net)
 target_include_directories(timer_multithread_test PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(connector_test test/connector_test.cpp)
+target_link_libraries(connector_test net)
+target_include_directories(connector_test PUBLIC ${PROJECT_SOURCE_DIR}/include)

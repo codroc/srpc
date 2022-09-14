@@ -2,6 +2,7 @@
 #define SRPC_NET_NET_H
 
 #include "eventloop.h"
+#include "connector.h"
 #include "socket.h"
 #include "ssl_socket.h"
 #include "channel.h"
