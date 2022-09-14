@@ -26,7 +26,9 @@ Channel::~Channel() {
 void Channel::handle_event() const {
     if (get_revents() | kReadEvent and _read_callback) {
         _read_callback();
-    } else if (get_revents() | kWriteEvent and _write_callback) {
+    }
+
+    if (get_revents() | kWriteEvent and _write_callback) {
         _write_callback();
     }
 }
